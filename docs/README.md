@@ -3,8 +3,8 @@ layout: home
 permalink: index.html
 
 # Please update this with your repository name and title
-repository-name: eYY-4yp-project-template
-title:
+repository-name: eYY-4yp-SinhSafe
+title: A Benchmark & Dataset for Sinhala Cyberbullying Detection
 ---
 
 [comment]: # "This is the standard layout for the project, but you can clean this and use your own template"
@@ -13,14 +13,11 @@ title:
 
 #### Team
 
-- eNumber, Name, [email](mailto:name@email.com)
-- eNumber, Name, [email](mailto:name@email.com)
-- eNumber, Name, [email](mailto:name@email.com)
+- e20397, Thilakasiri P.D., [email](mailto:e20397@eng.pdn.ac.lk)
 
 #### Supervisors
 
-- Name, [email](mailto:name@eng.pdn.ac.lk)
-- Name, [email](mailto:name@eng.pdn.ac.lk)
+- Dr. Eng. Sampath Deegalla, [email](sampath@eng.pdn.ac.lk)
 
 #### Table of content
 
@@ -44,15 +41,49 @@ This is a sample image, to show how to add images to your page. To learn more op
 
 ## Abstract
 
+**SinhSafe** is an advanced cyberbullying detection framework specifically designed for the linguistic complexities of the Sinhala language and its code-mixed variant, Singlish. Addressing the critical gap in low-resource language safety tools, this project leverages state-of-the-art multilingual transformer models, specifically **XLM-RoBERTa (XLM-R)**, **SinBERT**, and **SinhLlama**, to classify social media content into three distinct categories: *Cyberbullying*, *Offensive*, and *Normal*.
+
+A key innovation of SinhSafe is its robust preprocessing pipeline, which integrates a hybrid transliteration system combining Google API integration with a custom offline rule-based converter. This ensures high-accuracy normalization of Singlish text into Sinhala script before classification. By establishing a new benchmark and introducing a large pseudo-labeled dataset, SinhSafe aims to provide nuanced content moderation solutions for Sri Lankan social media platforms, promoting safer online communities through AI-driven intervention.
+
 ## Related works
+
+Cyberbullying detection in high-resource languages like English has seen significant advancements using Deep Learning and LLMs. However, low-resource languages like Sinhala suffer from a scarcity of labeled datasets and tools to handle code-mixing (Singlish). Previous works have focused largely on binary classification (Bullying vs. Non-Bullying) using monolingual models. SinhSafe expands on this by introducing fine-grained classification and benchmarking multilingual transformers against monolingual baselines.
 
 ## Methodology
 
+The SinhSafe framework consists of three main stages:
+
+1.  **Data Collection & Pseudo-Labeling:** Aggregating a large dataset of Sinhala/Singlish comments and using semi-supervised learning to generate fine-grained labels (Normal, Offensive, Cyberbullying).
+2.  **Hybrid Preprocessing Pipeline:**
+    * **Layer 1 (Google API):** High-accuracy online transliteration for Singlish content.
+    * **Layer 2 (Offline Backup):** A rule-based dictionary and phoneme mapper to handle transliteration when offline.
+    * **Layer 3 (Regex Cleaning):** Removal of URLs, usernames, and noise.
+3.  **Model Architecture:** Fine-tuning transformer-based models (**XLM-R**, **SinBERT**, **SinhLlama**) on the processed dataset to learn context-aware sentiment representations.
+
 ## Experiment Setup and Implementation
+
+The models were trained using the Hugging Face `transformers` library on an NVIDIA RTX 3090 GPU. The dataset was split into training, validation, and testing sets. We employed techniques such as:
+* **Tokenizer:** XLM-RoBERTa tokenizer (SentencePiece) for handling multilingual vocabulary.
+* **Optimization:** AdamW optimizer with a learning rate scheduler.
+* **Evaluation Metrics:** Macro F1-Score, Weighted F1-Score, Precision, and Recall.
 
 ## Results and Analysis
 
+We are currently benchmarking three models: **XLM-RoBERTa**, **SinBERT**, and **SinhLlama**. 
+
+**Phase 1 Results: XLM-RoBERTa (Large)**
+Initial experiments with the multilingual XLM-R model have demonstrated strong performance on the code-mixed dataset:
+
+* **Overall Performance:** Achieved a **Macro F1-Score of 0.82**.
+* **Safety Profile:** The model maintained a **0.93 F1-Score for the 'Normal' class**, ensuring minimal false positives.
+* **Detection Capability:** Despite the complexity of code-mixed data, the system successfully identifies subtle offensive content.
+
+**Phase 2: Comparative Benchmarking (In Progress)**
+Experiments are currently underway for **SinBERT** and **SinhLlama**. Once completed, their performance will be tabulated here to determine the most effective architecture for Sinhala cyberbullying detection.
+
 ## Conclusion
+
+SinhSafe successfully establishes a robust pipeline for Sinhala cyberbullying detection, combining a novel hybrid transliteration system with powerful transformer models. Preliminary results with XLM-RoBERTa indicate that fine-grained classification in low-resource settings is highly achievable with an F1-score of 0.82. The ongoing comparison with SinBERT and SinhLlama will provide a definitive benchmark for the research community, identifying the optimal model architecture for protecting the Sri Lankan digital ecosystem.
 
 ## Publications
 [//]: # "Note: Uncomment each once you uploaded the files to the repository"
@@ -68,8 +99,8 @@ This is a sample image, to show how to add images to your page. To learn more op
 
 [//]: # ( NOTE: EDIT THIS LINKS WITH YOUR REPO DETAILS )
 
-- [Project Repository](https://github.com/cepdnaclk/repository-name)
-- [Project Page](https://cepdnaclk.github.io/repository-name)
+- [Project Repository](https://github.com/cepdnaclk/e20-4yp-SinhSafe)
+- [Project Page](https://cepdnaclk.github.io/e20-4yp-SinhSafe)
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
 - [University of Peradeniya](https://eng.pdn.ac.lk/)
 
