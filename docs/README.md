@@ -9,12 +9,12 @@ title: A Benchmark & Dataset for Sinhala Cyberbullying Detection
 
 [comment]: # "This is the standard layout for the project, but you can clean this and use your own template"
 
-![SinhSafe Project Banner](./data/cover_page.jpg)
+![SinhSafe Project Banner](./docs/images/cover_page.jpg)
 
 # SinhSafe: A Benchmark & Dataset for Sinhala Cyberbullying Detection
 
 <div align="center">
-    <img src="./data/thumbnail.png" width="200">
+    <img src="./docs/images/thumbnail.png" width="200">
 </div>
 
 #### Team
