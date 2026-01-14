@@ -3,7 +3,7 @@ layout: home
 permalink: index.html
 
 # Please update this with your repository name and title
-repository-name: eYY-4yp-SinhSafe
+repository-name: e20-4yp-SinhSafe
 title: A Benchmark & Dataset for Sinhala Cyberbullying Detection
 ---
 
