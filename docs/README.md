@@ -9,7 +9,13 @@ title: A Benchmark & Dataset for Sinhala Cyberbullying Detection
 
 [comment]: # "This is the standard layout for the project, but you can clean this and use your own template"
 
-# Project Title
+![SinhSafe Project Banner](./data/cover_page.jpg)
+
+# SinhSafe: A Benchmark & Dataset for Sinhala Cyberbullying Detection
+
+<div align="center">
+    <img src="./data/thumbnail.png" width="200">
+</div>
 
 #### Team
 
@@ -47,7 +53,16 @@ A key innovation of SinhSafe is its robust preprocessing pipeline, which integra
 
 ## Related works
 
-Cyberbullying detection in high-resource languages like English has seen significant advancements using Deep Learning and LLMs. However, low-resource languages like Sinhala suffer from a scarcity of labeled datasets and tools to handle code-mixing (Singlish). Previous works have focused largely on binary classification (Bullying vs. Non-Bullying) using monolingual models. SinhSafe expands on this by introducing fine-grained classification and benchmarking multilingual transformers against monolingual baselines.
+Research into Sinhala cyberbullying detection has been constrained by a lack of diverse datasets and resources, a challenge highlighted by **Viswanath & Kumar (2023)**. 
+
+**Datasets & Classification Taxonomy**
+Most existing work, such as the *SOLD* and *semi-SOLD* datasets by **Ranasinghe et al. (2022)**, focuses on binary classification (Offensive vs. Not Offensive). We identified that binary labels are often insufficient for nuanced moderation. Consequently, our project draws significant inspiration from **Mathew et al. (2021)** and their *HateXplain* dataset. Following their approach, we moved beyond binary detection to a **3-class taxonomy (Cyberbullying, Offensive, Normal)**, allowing for more fine-grained analysis of harmful content.
+
+**Model Architectures**
+In the domain of model selection, **Dhananjaya et al. (2022)** demonstrated that monolingual models like **SinBERT** often outperform multilingual alternatives on small, specific Sinhala datasets. Conversely, the recent introduction of **SinLlama** by **Aravinda et al. (2025)** provides a foundation for testing Large Language Model (LLM) capabilities in Sinhala. SinhSafe benchmarks these distinct architectures (Multilingual XLM-R vs. Monolingual SinBERT vs. SinLlama) to determine the optimal approach.
+
+**Preprocessing**
+To handle the code-mixing prevalent in Sri Lankan social media, we leveraged insights from **SinLingua (Sameera et al., 2023)**, adopting their strategies for lemmatization and Singlish-to-Sinhala conversion within our hybrid preprocessing pipeline.
 
 ## Methodology
 
