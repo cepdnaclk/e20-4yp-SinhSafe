@@ -24,4 +24,4 @@ ipykernel
 accelerate
 bitsandbytes
 peft
-scipy
+scipy///
