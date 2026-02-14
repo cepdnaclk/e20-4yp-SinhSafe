@@ -9,8 +9,8 @@ pandas
 numpy
 scikit-learn
 tqdm
-datasets
-openpyxl
+datasets       <-- ADD THIS (Crucial for your script)
+openpyxl       <-- ADD THIS (Crucial for reading Excel files)
 
 # --- Visualization ---
 matplotlib
@@ -20,8 +20,12 @@ seaborn
 jupyter
 ipykernel
 
+# --- Sinhala Specific (Optional - Uncomment if needed) ---
+# sinling
+# sinlingua
+
 # --- LLM & Optimization ---
 accelerate
 bitsandbytes
 peft
-scipy///
+scipy

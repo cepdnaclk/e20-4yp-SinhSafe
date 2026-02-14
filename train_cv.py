@@ -12,25 +12,44 @@ import os
 # --- Configuration ---
 MODEL_NAME = "xlm-roberta-large"
 DATA_DIR = r"data/processed_ground_truth"
+SAVE_MODEL_DIR = "models/best_xlm_roberta"  # <--- NEW NAME HERE
 N_FOLDS = 5 
-id2label = {0: "Normal", 1: "Offensive", 2: "Cyberbullying"}
-label2id = {"Normal": 0, "Offensive": 1, "Cyberbullying": 2}
+
+id2label = {0: "Normal", 1: "Offensive", 2: "Harassment"}
+label2id = {"Normal": 0, "Offensive": 1, "Harassment": 2}
 
 # --- 1. Load Data (RAW & UNBALANCED) ---
-# We load data here but DO NOT oversample yet to prevent leakage
 def load_raw_data():
-    df_bully = pd.read_excel(os.path.join(DATA_DIR, "processed_cyberbullying.xlsx"))
-    df_offen = pd.read_excel(os.path.join(DATA_DIR, "processed_offensive.xlsx"))
-    df_norm = pd.read_excel(os.path.join(DATA_DIR, "processed_normal.xlsx"))
+    print(f"📂 Loading data from: {DATA_DIR}")
+    
+    path_harass = os.path.join(DATA_DIR, "processed_consolidated_harassment.xlsx")
+    path_offen = os.path.join(DATA_DIR, "processed_consolidated_offensive.xlsx")
+    path_norm  = os.path.join(DATA_DIR, "processed_consolidated_normal.xlsx")
 
+    # Debug: Check if files exist
+    if not os.path.exists(path_harass): raise FileNotFoundError(f"Missing: {path_harass}")
+    if not os.path.exists(path_offen): raise FileNotFoundError(f"Missing: {path_offen}")
+    if not os.path.exists(path_norm):  raise FileNotFoundError(f"Missing: {path_norm}")
+
+    df_harass = pd.read_excel(path_harass)
+    df_offen = pd.read_excel(path_offen)
+    df_norm  = pd.read_excel(path_norm)
+
+    # Assign Numeric Labels
+    # 0 = Normal, 1 = Offensive, 2 = Harassment
     df_norm['label'] = 0
     df_offen['label'] = 1
-    df_bully['label'] = 2
+    df_harass['label'] = 2
 
-    df = pd.concat([df_bully, df_offen, df_norm], ignore_index=True)
+    # Combine
+    df = pd.concat([df_harass, df_offen, df_norm], ignore_index=True)
+    
+    # Cleaning
     df = df[['cleaned_text', 'label']].dropna()
     df.rename(columns={'cleaned_text': 'text'}, inplace=True)
     df['text'] = df['text'].astype(str)
+    
+    print(f"✅ Loaded {len(df)} rows successfully.")
     return df
 
 # --- 2. Helper to Balance a Training Split ---
@@ -38,22 +57,23 @@ def balance_training_data(train_df):
     # Separate classes
     df_norm = train_df[train_df['label'] == 0]
     df_offen = train_df[train_df['label'] == 1]
-    df_bully = train_df[train_df['label'] == 2]
+    df_harass = train_df[train_df['label'] == 2]
 
-    # Target count is the majority class in this specific fold
     target_count = len(df_norm)
 
     # Upsample minority classes
-    df_bully_upsampled = resample(df_bully, replace=True, n_samples=target_count, random_state=42)
+    df_harass_upsampled = resample(df_harass, replace=True, n_samples=target_count, random_state=42)
     df_offen_upsampled = resample(df_offen, replace=True, n_samples=target_count, random_state=42)
 
     # Combine
-    df_balanced = pd.concat([df_norm, df_offen_upsampled, df_bully_upsampled])
-    return df_balanced.sample(frac=1, random_state=42).reset_index(drop=True) # Shuffle
+    df_balanced = pd.concat([df_norm, df_offen_upsampled, df_harass_upsampled])
+    return df_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
 
 # --- Setup ---
-df = load_raw_data() # Load raw data
+df = load_raw_data()
 print(f"Total Raw Data: {len(df)}")
+
+print("🔄 Loading Tokenizer...")
 tokenizer = XLMRobertaTokenizer.from_pretrained(MODEL_NAME)
 
 def tokenize_function(examples):
@@ -61,7 +81,7 @@ def tokenize_function(examples):
 
 # --- DEBUG: Sanity Check ---
 print("\n--- TOKENIZER CHECK ---")
-sample_text = df['text'].iloc[0]  # Grab the first sentence
+sample_text = df['text'].iloc[0]
 print(f"Original: {sample_text}")
 print(f"Tokens:   {tokenizer.tokenize(sample_text)}")
 print("-----------------------\n")
@@ -77,14 +97,14 @@ def compute_metrics(pred):
 skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=42)
 fold_results = []
 
-print(f"Starting {N_FOLDS}-Fold Cross-Validation on RTX 3090...")
+print(f"🚀 Starting {N_FOLDS}-Fold Cross-Validation on RTX 3090...")
 
 for fold, (train_idx, val_idx) in enumerate(skf.split(df, df['label'])):
     print(f"\n--- Fold {fold + 1}/{N_FOLDS} ---")
     
-    # A. Split Raw Data (Pure Split)
+    # A. Split Raw Data
     train_df_raw = df.iloc[train_idx]
-    val_df = df.iloc[val_idx] # Validation data is NEVER touched/balanced
+    val_df = df.iloc[val_idx]
     
     # B. Balance ONLY Training Data
     train_df_balanced = balance_training_data(train_df_raw)
@@ -106,7 +126,7 @@ for fold, (train_idx, val_idx) in enumerate(skf.split(df, df['label'])):
     # E. Training Args
     training_args = TrainingArguments(
         output_dir=f'./results/fold_{fold}',
-        num_train_epochs=5,               # Increased to 5 (Safe bet)
+        num_train_epochs=10,
         per_device_train_batch_size=8, 
         per_device_eval_batch_size=32,
         gradient_accumulation_steps=4,
@@ -117,6 +137,7 @@ for fold, (train_idx, val_idx) in enumerate(skf.split(df, df['label'])):
         eval_strategy="epoch",
         save_strategy="epoch",
         load_best_model_at_end=True,
+        metric_for_best_model="eval_loss",
         fp16=True,
         dataloader_num_workers=0,
         dataloader_pin_memory=True,
@@ -138,9 +159,9 @@ for fold, (train_idx, val_idx) in enumerate(skf.split(df, df['label'])):
     
     # G. Save Best
     if eval_result['eval_accuracy'] == max(fold_results):
-        print(">> New Best Model! Saving...")
-        model.save_pretrained("models/best_cv_model")
-        tokenizer.save_pretrained("models/best_cv_model")
+        print(f">> New Best Model! Saving to {SAVE_MODEL_DIR}...")
+        model.save_pretrained(SAVE_MODEL_DIR)
+        tokenizer.save_pretrained(SAVE_MODEL_DIR)
 
     # H. Cleanup
     del model, trainer, training_args

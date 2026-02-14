@@ -1,194 +1,135 @@
 import pandas as pd
-import torch
-import torch.nn.functional as F
-from transformers import XLMRobertaForSequenceClassification, XLMRobertaTokenizer
 import sys
 import os
-import re
 from tqdm import tqdm
 
 # ==========================================
 # 1. CONFIGURATION
 # ==========================================
 current_dir = os.getcwd()
-MODEL_PATH = os.path.join(current_dir, "models", "best_cv_model")
 
+# Input: Where your manually labeled consolidated files are
+INPUT_DIR = os.path.join(current_dir, "data", "raw")
+
+# Output: Where the cleaned, tokenized files will be saved
+OUTPUT_DIR = os.path.join(current_dir, "data", "processed_ground_truth")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+# The specific files to process
 FILE_LIST = [
-    'data/day6.xlsx', 
-    'data/day7.xlsx', 
-    'data/day8.xlsx', 
-    'data/day9.xlsx', 
-    'data/day10.xlsx'
+    'consolidated_harassment.xlsx',
+    'consolidated_normal.xlsx',
+    'consolidated_offensive.xlsx'
 ]
 
-OUTPUT_FILES = {
-    'Cyberbullying': 'cyberbullying_model_predict.xlsx',
-    'Normal': 'normal_model_predict.xlsx',
-    'Offensive': 'offensive_model_predict.xlsx'
-}
-
 # ==========================================
-# 2. SETUP HYBRID CLEANING SYSTEM
+# 2. SETUP CLEANING ENGINE
 # ==========================================
-# Add 'src' to path to load your custom modules
+# We add 'src' to the system path just in case your script is there
 sys.path.append(os.path.join(current_dir, 'src'))
 
-# A. Load Google API Logic
 try:
+    # Attempt to import your cleaning logic
     from process_ground_truth import clean_and_process
-    print("✅ Loaded: Google Online Transliteration")
-    USE_GOOGLE = True
+    print("✅ Loaded: process_ground_truth (Google API / Transliteration Enabled)")
 except ImportError:
-    print("⚠️ Warning: Could not find 'process_ground_truth.py'.")
-    USE_GOOGLE = False
-
-# B. Load Offline Logic
-try:
-    from offline_transliteration import OfflineConverter
-    # Initialize the converter once (loads dictionaries)
-    offline_converter = OfflineConverter()
-    print("✅ Loaded: Offline Transliteration Backup")
-    USE_OFFLINE = True
-except ImportError:
-    print("⚠️ Warning: Could not find 'offline_transliteration.py'.")
-    USE_OFFLINE = False
-
-def smart_clean_text(text):
-    """
-    3-Layer Cleaning Strategy:
-    1. Try Google API (High Accuracy)
-    2. If fails, use Offline Converter (Medium Accuracy)
-    3. If fails, use Regex (Basic Safety)
-    """
-    if not isinstance(text, str): return ""
-    
-    # LAYER 1: Google API (Requires Internet)
-    if USE_GOOGLE:
-        try:
-            return clean_and_process(text)
-        except Exception:
-            # Internet failed? Fall through to Layer 2
-            pass 
-            
-    # LAYER 2: Offline Converter (No Internet needed)
-    if USE_OFFLINE:
-        try:
-            return offline_converter.process_sentence(text)
-        except Exception:
-            pass
-            
-    # LAYER 3: Basic Regex Fallback
-    text = re.sub(r'http\S+', '', text)
-    return re.sub(r'\s+', ' ', text).strip()
-
-# ==========================================
-# 3. LOAD MODEL
-# ==========================================
-print("🔄 Loading SinhSafe Model...")
-try:
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = XLMRobertaTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
-    model = XLMRobertaForSequenceClassification.from_pretrained(MODEL_PATH, local_files_only=True)
-    model.to(device)
-    model.eval()
-    print(f"✅ Model Loaded on {device}")
-except Exception as e:
-    print(f"❌ CRITICAL ERROR: Model failed to load. {e}")
-    exit()
-
-# ==========================================
-# 4. PREDICTION LOGIC
-# ==========================================
-def get_predictions_batch(texts, batch_size=16):
-    all_labels = []
-    all_confs = []
-
-    for i in range(0, len(texts), batch_size):
-        batch_texts = texts[i : i + batch_size]
-        try:
-            inputs = tokenizer(
-                batch_texts, 
-                return_tensors="pt", 
-                truncation=True, 
-                padding="max_length", 
-                max_length=128
-            )
-            inputs = {k: v.to(device) for k, v in inputs.items()}
-
-            with torch.no_grad():
-                outputs = model(**inputs)
-                probs = F.softmax(outputs.logits, dim=-1)
-
-            conf_scores, pred_indices = torch.max(probs, dim=1)
-
-            for idx, conf in zip(pred_indices, conf_scores):
-                all_labels.append(model.config.id2label[idx.item()])
-                all_confs.append(f"{conf.item():.0%}")
-        except Exception:
-            for _ in batch_texts:
-                all_labels.append("Error")
-                all_confs.append("0%")
-    return all_labels, all_confs
-
-# ==========================================
-# 5. MAIN EXECUTION LOOP
-# ==========================================
-combined_data = []
-
-print("\n🚀 Starting Robust Processing Job...")
-
-for file_path in FILE_LIST:
-    if not os.path.exists(file_path):
-        print(f"⚠️ Warning: {file_path} not found. Skipping.")
-        continue
-        
-    print(f"\n📂 Processing {file_path}...")
+    # If the file is in the root directory instead of src
     try:
-        df = pd.read_excel(file_path)
+        import process_ground_truth
+        from process_ground_truth import clean_and_process
+        print("✅ Loaded: process_ground_truth (from root)")
+    except ImportError:
+        print("❌ CRITICAL ERROR: Could not find 'process_ground_truth.py'")
+        print("   Make sure the file exists in your folder.")
+        sys.exit(1)
+
+# ==========================================
+# 3. PROCESSING LOOP
+# ==========================================
+def process_ground_truth_files():
+    print(f"\n🚀 Starting Ground Truth Processing...")
+    print(f"📂 Reading from: {INPUT_DIR}")
+    print(f"💾 Saving to:   {OUTPUT_DIR}\n")
+
+    for filename in FILE_LIST:
+        input_path = os.path.join(INPUT_DIR, filename)
         
-        # Smart Column Detection
-        if 'comment' in df.columns:
-            text_col = 'comment'
-        elif 'text' in df.columns:
-            text_col = 'text'
-        else:
-            text_col = df.columns[0]
+        if not os.path.exists(input_path):
+            print(f"⚠️  Warning: {filename} not found in data/raw. Skipping.")
+            continue
+
+        print(f"Processing {filename}...")
+        
+        try:
+            # 1. Load Data
+            df = pd.read_excel(input_path)
             
-        print(f"   ℹ️ Target Column: '{text_col}'")
+            # 2. Detect Columns (Case Insensitive)
+            cols = {c.lower(): c for c in df.columns}
+            
+            # Find Text Column
+            if 'comment' in cols:
+                text_col = cols['comment']
+            elif 'text' in cols:
+                text_col = cols['text']
+            else:
+                text_col = df.columns[0] # Fallback to first column
 
-        # 1. CLEANING (Hybrid Mode)
-        print("   ⏳ Cleaning (Google → Offline Fallback)...")
-        clean_texts = []
-        for text in tqdm(df[text_col], desc="Cleaning"):
-            clean_texts.append(smart_clean_text(text))
-        
-        # 2. PREDICTION
-        print("   🧠 Running Predictions...")
-        labels, confidences = get_predictions_batch(clean_texts)
-        
-        # 3. STORE
-        df['cleaned_text'] = clean_texts
-        df['label'] = labels
-        df['prediction_confidence'] = confidences
-        
-        combined_data.append(df)
-        print(f"   ✅ Finished {file_path}")
-        
-    except Exception as e:
-        print(f"❌ Failed to process {file_path}: {e}")
+            # Find Label Column
+            if 'label' in cols:
+                label_col = cols['label']
+            else:
+                label_col = None
+                print("   ⚠️  Warning: No 'label' column found. Checking filename...")
 
-# ==========================================
-# 6. SAVE OUTPUTS
-# ==========================================
-if combined_data:
-    print("\n💾 Saving Final Files...")
-    master_df = pd.concat(combined_data, ignore_index=True)
+            print(f"   ℹ️  Using text column: '{text_col}'")
 
-    for label_name, filename in OUTPUT_FILES.items():
-        subset = master_df[master_df['label'] == label_name]
-        if not subset.empty:
-            subset.to_excel(filename, index=False)
-            print(f"   ✅ Saved {len(subset)} rows to '{filename}'")
-    print("\n🎉 All Done! Good Morning!")
-else:
-    print("\n❌ No data processed.")
+            # 3. Clean & Tokenize Text
+            # This runs your 'clean_and_process' function (Google API) on every row
+            cleaned_texts = []
+            for text in tqdm(df[text_col], desc="   Cleaning & Tokenizing"):
+                cleaned_texts.append(clean_and_process(text))
+            
+            df['cleaned_text'] = cleaned_texts
+
+            # 4. Process Labels (Lowercase Only)
+            if label_col:
+                # Force lowercase and strip spaces
+                df[label_col] = df[label_col].astype(str).str.lower().str.strip()
+            else:
+                # If no label col exists, create one based on filename
+                if 'harassment' in filename:
+                    df['label'] = 'harassment'
+                elif 'offensive' in filename:
+                    df['label'] = 'offensive'
+                elif 'normal' in filename:
+                    df['label'] = 'normal'
+
+            # 5. Save Final File
+            # We add a 'processed_' prefix to keep things organized
+            output_filename = f"processed_{filename}"
+            output_path = os.path.join(OUTPUT_DIR, output_filename)
+            
+            # Keep only the essential columns
+            # If label_col was found, use it; otherwise use 'label' created above
+            final_label_col = label_col if label_col else 'label'
+            final_df = df[[text_col, final_label_col, 'cleaned_text']]
+            
+            # Rename columns to standard names for training
+            final_df.columns = ['comment', 'label', 'cleaned_text']
+
+            # Remove empty rows if cleaning failed completely
+            final_df = final_df.dropna(subset=['cleaned_text', 'label'])
+            
+            final_df.to_excel(output_path, index=False)
+            print(f"   ✅ Saved {len(final_df)} rows to {output_filename}\n")
+
+        except Exception as e:
+            print(f"   ❌ Failed to process {filename}: {e}\n")
+
+    print("="*30)
+    print("🎉 All Ground Truth Data Processed & Ready for Training!")
+    print("="*30)
+
+if __name__ == "__main__":
+    process_ground_truth_files()
