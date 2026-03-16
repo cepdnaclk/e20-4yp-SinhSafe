@@ -1,5 +1,8 @@
-Offensive / abusive: Label all rude, insulting, or sexualized language.
+Harassment: Targeted behavior meant to degrade or intimidate. Includes 
+    threats of violence, 
+    encouraging self-harm, 
+    or attacking someone's family, women, religion, and ethnicity-based attacks.
 
-Cyberbullying: Label only comments that threaten, intimidate, humiliation or target family/ethnic/religious groups. Also context
-awareness should be noted. The comment should have clear intent in directing it to someone. Repeated vulgarity is noted
-as cyberbullying too.
+Offensive: Content that violates social norms or decorum. General vulgarity, crude jokes, or "blue" humor without a specific target.
+
+Normal: Standard, respectful communication. Professional, casual, or friendly dialogue that follows social etiquette.

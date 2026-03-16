@@ -31,13 +31,23 @@ def is_sinhala(text):
     """Checks if a word is already Sinhala (Unicode)"""
     return bool(re.search('[\u0D80-\u0DFF]', text))
 
-def remove_usernames(text):
-    """Removes @mentions like @USER, @kamal from text."""
+def clean_noise(text):
+    """Removes actual links, the word 'url', and @mentions from text."""
     # Ensure text is string
     text = str(text)
-    # Regex to remove @ followed by word characters
+    
+    # 1. Remove standard web URLs (http://, https://, www.)
+    text = re.sub(r'https?://\S+|www\.\S+', '', text)
+    
+    # 2. Remove the specific keyword "url" or "URL" 
+    # (?i) makes it case-insensitive. \b ensures it only deletes the standalone word, 
+    # so it doesn't accidentally break words like "curl".
+    text = re.sub(r'(?i)\burl\b', '', text)
+    
+    # 3. Remove @mentions like @USER, @kamal
     text = re.sub(r'@[A-Za-z0-9_]+', '', text)
-    # Clean up extra spaces
+    
+    # Clean up extra spaces left behind by deletions
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
@@ -81,9 +91,9 @@ def clean_and_process(text):
         return ""
     
     # --- NEW: CLEAN NOISE FIRST ---
-    # We remove @USER before splitting, so we don't accidentally 
-    # try to transliterate the username.
-    text = remove_usernames(text)
+    # We remove @USER, links, and "URL" before splitting, so we don't accidentally 
+    # try to transliterate them.
+    text = clean_noise(text)
     # ------------------------------
 
     tokens = text.split()

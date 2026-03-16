@@ -149,4 +149,4 @@ trainer.train()
 
 trainer.model.save_pretrained(FINAL_MODEL_DIR)
 tokenizer.save_pretrained(FINAL_MODEL_DIR)
-print(f"✅ V2 Training complete! New model safely saved to {FINAL_MODEL_DIR}")
+print(f"✅ V3 Training complete! New model safely saved to {FINAL_MODEL_DIR}")
