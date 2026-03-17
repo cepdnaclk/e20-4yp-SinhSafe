@@ -5,7 +5,9 @@ repository-name: e20-4yp-SinhSafe
 title: SinhSafe - Multi-Model Detection of Cyberbullying and Hate Speech
 ---
 
-![SinhSafe Project Banner](./images/cover_page.jpg)
+<p align="center">
+<img src="images/cover_page.jpg" width="100%">
+</p>
 
 # SinhSafe: An Iterative Deep Learning & Ensemble Approach to Sinhala Harassment Detection
 
