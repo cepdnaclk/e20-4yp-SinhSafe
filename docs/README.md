@@ -9,9 +9,7 @@ title: SinhSafe - Multi-Model Detection of Cyberbullying and Hate Speech
 
 # SinhSafe: An Iterative Deep Learning & Ensemble Approach to Sinhala Harassment Detection
 
-<div align="center">
-    <img src="./images/SinhSafe.png" style="width:200px;">
-</div>
+![SinhSafe Thumbnail](./images/SinhSafe.png)
 
 #### Team
 - e20397, Thilakasiri P.D., [email](mailto:e20397@eng.pdn.ac.lk)
