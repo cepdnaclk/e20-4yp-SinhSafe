@@ -97,8 +97,11 @@ We utilized **5-Fold Stratified Cross-Validation** to isolate the best-performin
 <p align="center">
   <img src="images/sinbert/SinBERT_Metrics_Comparison.png" alt="SinBERT Metric Comparison" style="width: 80%;">
 </p>
-**Rationale for Selecting Version 4:** 
-Based on the comprehensive metric comparison and loss curve analysis, we selected **Version 4** as our optimal SinBERT model. While Versions 2 and 3 showed marginally higher raw accuracy, Version 4 demonstrated an exceptionally strong **Weighted Precision**, which is critical in moderation systems to minimize "False Positives" (unfairly penalizing normal users). Furthermore, the V4 Loss Curve presented a mathematically perfect early-stopping threshold: the evaluation loss hit a distinct, sharp minimum exactly at **Epoch 2**. By halting training at this exact checkpoint, we captured the model at its absolute peak generalization, completely avoiding the severe overfitting observed in the later epochs of the other versions.
+### Rationale for Selecting Version 4
+
+Based on the comprehensive metric comparison and loss curve analysis, we selected **Version 4** as our optimal SinBERT model. While Versions 2 and 3 showed marginally higher raw accuracy, Version 4 demonstrated an exceptionally strong **Weighted Precision**, which is critical in moderation systems to minimize **"False Positives"** (unfairly penalizing normal users). 
+
+Furthermore, the V4 Loss Curve presented a mathematically perfect early-stopping threshold: the evaluation loss hit a distinct, sharp minimum exactly at **Epoch 2**. By halting training at this exact checkpoint, we captured the model at its absolute peak generalization, completely avoiding the severe overfitting observed in the later epochs of the other versions.
 
 **🏆 Winning Parameters for Production Model(SinBERT Best Version):**
 ```text
@@ -111,14 +114,35 @@ dropout_p     : 0.3
 #### B. XLM-RoBERTa (Large) - 3 Versions Tested
 Similar to SinBERT, XLM-R was evaluated using Stratified 5-Fold Cross-Validation, relying on the lowest evaluation loss and highest weighted precision to prevent data leakage.
 
-> **[PLACEHOLDER: XLM-R Version 1 Loss Curve]**
-
-> **[PLACEHOLDER: XLM-R Version 2 Loss Curve]**
-
-> **[PLACEHOLDER: XLM-R Version 3 Loss Curve]**
+<table>
+  <tr>
+    <td align="center">
+      <strong>Version 1</strong><br>
+      <img src="images/xlm/XLMR_Version_1_Loss_Curve.png" alt="XLM-R V1">
+    </td>
+    <td align="center">
+      <strong>Version 2</strong><br>
+      <img src="images/xlm/XLMR_Version_2_Loss_Curve.png" alt="XLM-R V2">
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <strong>Version 3</strong><br>
+      <img src="images/xlm/XLMR_Version_3_Loss_Curve.png" alt="XLM-R V3" style="width: 50%;">
+    </td>
+  </tr>
+</table>
 
 **XLM-RoBERTa Performance Comparison**
-> **[PLACEHOLDER: XLM-R Versions Metric Comparison Graph]**
+<p align="center">
+  <img src="images/xlm/XLMR_Metrics_Comparison.png" alt="XLM-R Metric Comparison" style="width: 80%;">
+</p>
+
+### Rationale for Selecting Version 2
+
+Based on the multi-version benchmark, we selected **Version 2** as the production-ready model for the XLM-RoBERTa architecture. Version 2 achieved the highest **F1-Score (80.41%)** and **Accuracy (80.46%)** across all tested iterations. 
+
+While the loss curves indicate that Version 2 eventually began to overfit as training progressed, our implementation of **Early Stopping** allowed us to capture the model weights at the optimal convergence point (Epoch 3). This balanced peak performance with sufficient generalization to handle the linguistic variance in our large-scale unlabeled dataset.
 
 **🏆 Winning Parameters for Production Model(XLM-R Best Version):**
 ```text
