@@ -116,7 +116,7 @@ for fold, (train_idx, val_idx) in enumerate(skf.split(df, df['label'])):
         per_device_train_batch_size=8, 
         per_device_eval_batch_size=16,
         gradient_accumulation_steps=4, 
-        learning_rate=1e-5,
+        learning_rate=2e-5,
         warmup_steps=150,
         weight_decay=0.05,
         eval_strategy="epoch",
