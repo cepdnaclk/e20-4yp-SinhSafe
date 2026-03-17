@@ -1,6 +1,4 @@
 import os
-import shutil
-
 # --- 1. CRITICAL: GPU TARGETING ---
 # Target GPU 2 (RTX 6000 Ada) to avoid the memory hogs on 0 and 1
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -10,7 +8,6 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
-import json
 import gc
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoTokenizer, AutoModel, get_linear_schedule_with_warmup
@@ -169,10 +166,10 @@ def run_cv_training(df):
             # Metrics
             avg_v_loss = np.mean(val_losses)
             acc = accuracy_score(val_labels, val_preds)
-            prec = precision_score(val_labels, val_preds, average='weighted', zero_division=0)
-            rec = recall_score(val_labels, val_preds, average='weighted')
-            f1 = f1_score(val_labels, val_preds, average='weighted')
-            
+            prec = precision_score(val_labels, val_preds, average='macro', zero_division=0)
+            rec = recall_score(val_labels, val_preds, average='macro')
+            f1 = f1_score(val_labels, val_preds, average='macro')
+
             print(f"Epoch {epoch+1} | Train Loss: {train_loss:.4f} | Val Loss: {avg_v_loss:.4f} | Acc: {acc:.4f} | P: {prec:.4f} | R: {rec:.4f} | F1: {f1:.4f}")
 
             # Store data for the Loss Curve

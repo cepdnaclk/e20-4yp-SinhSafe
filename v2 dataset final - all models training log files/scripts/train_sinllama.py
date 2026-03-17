@@ -197,7 +197,7 @@ for text in tqdm(val_df_raw['cleaned_text'], desc="Evaluating"):
         pred_labels.append("Normal")
 
 acc = accuracy_score(true_labels, pred_labels)
-prec, rec, f1, _ = precision_recall_fscore_support(true_labels, pred_labels, average='weighted', zero_division=0)
+prec, rec, f1, _ = precision_recall_fscore_support(true_labels, pred_labels, average='macro', zero_division=0)
 
 report = "\n" + "="*60 + "\n"
 report += "📊 1. DATA FOR LOSS CURVES (OVERFITTING PROOF)\n"
