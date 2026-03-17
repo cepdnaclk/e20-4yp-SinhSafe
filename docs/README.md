@@ -58,13 +58,77 @@ We engineered three distinct architectures, adding custom layers to prevent over
 * **SinBERT (LSTM-Head):** Utilizes a **Bi-Directional LSTM** (512 units) with **Dual-Pooling** (Average + Max) to capture long-range dependencies in native Sinhala script.
 * **SinLLaMA (8B):** An instruction-tuned LLM using **4-bit NF4 Quantization (QLoRA)** and **LoRA** adapters for parameter-efficient tuning.
 
-### 2. Training Strategies & Hyperparameter Search
-To find the perfect training arguments (learning rate, batch size, weight decay), we tested multiple iterations of each architecture. 
+### 2. Training Strategies, Hyperparameter Search & Loss Analysis
+To find the perfect training arguments (learning rate, batch size, weight decay) and prevent overfitting, we tested 12 distinct iterations across our three architectures. We tracked training vs. evaluation loss for every version and compared their overall metrics to select the "Best-Fit" model for our final ensemble.
 
-> **[PLACEHOLDER: Hyperparameter_Versions_Comparison_Graph.png]**
+#### A. SinBERT (LSTM-Head) - 5 Versions Tested
+We utilized **5-Fold Stratified Cross-Validation** to isolate the best-performing epoch and evaluate stability across different data splits.
 
-* **Validation:** We used **5-Fold Stratified Cross-Validation** for encoder models, selecting the "Best Fold" based on high weighted precision and lowest evaluation loss.
-* **Early Stopping:** For SinLLaMA, we implemented a patience-based stop (3 consecutive intervals of 50 steps) to recall the lowest evaluation loss checkpoint, preventing "Testing Collapse".
+> **[PLACEHOLDER: SinBERT Version 1 Loss Curve]**
+
+> **[PLACEHOLDER: SinBERT Version 2 Loss Curve]**
+
+> **[PLACEHOLDER: SinBERT Version 3 Loss Curve]**
+
+> **[PLACEHOLDER: SinBERT Version 4 Loss Curve]**
+
+> **[PLACEHOLDER: SinBERT Version 5 Loss Curve]**
+
+**SinBERT Performance Comparison**
+> **[PLACEHOLDER: SinBERT Versions Metric Comparison Graph]**
+
+**🏆 Winning Parameters for Production Model(SinBERT Best Version):**
+```text
+max_len       : 128
+batch_size    : 16
+epochs        : 2
+learning_rate : 2e-05
+dropout_p     : 0.3
+```
+#### B. XLM-RoBERTa (Large) - 3 Versions Tested
+Similar to SinBERT, XLM-R was evaluated using Stratified 5-Fold Cross-Validation, relying on the lowest evaluation loss and highest weighted precision to prevent data leakage.
+
+> **[PLACEHOLDER: XLM-R Version 1 Loss Curve]**
+
+> **[PLACEHOLDER: XLM-R Version 2 Loss Curve]**
+
+> **[PLACEHOLDER: XLM-R Version 3 Loss Curve]**
+
+**XLM-RoBERTa Performance Comparison**
+> **[PLACEHOLDER: XLM-R Versions Metric Comparison Graph]**
+
+**🏆 Winning Parameters Production Model(XLM-R Best Version):**
+```text
+num_train_epochs : 10
+batch_size       : 32
+learning_rate    : 2e-05
+warmup_steps     : 500
+weight_decay     : 0.01
+```
+#### C. SinLLaMA (8B) - 4 Versions Tested
+For the Generative LLM, we evaluated via an 80/10/10 Train/Val/Test split. To prevent the "Testing Collapse" caused by memorization, we implemented strict **Early Stopping**: training halted if evaluation loss increased for 3 consecutive intervals (every 50 steps), capturing the checkpoint with the absolute lowest evaluation loss.
+
+> **[PLACEHOLDER: SinLLaMA Version 1 Loss Curve]**
+
+> **[PLACEHOLDER: SinLLaMA Version 2 Loss Curve]**
+
+> **[PLACEHOLDER: SinLLaMA Version 3 Loss Curve]**
+
+> **[PLACEHOLDER: SinLLaMA Version 4 Loss Curve]**
+
+**SinLLaMA Performance Comparison**
+> **[PLACEHOLDER: SinLLaMA Versions Metric Comparison Graph]**
+
+**🏆 Winning Parameters Production Model(SinLLaMA Best Version):**
+```text
+max_length        : 512
+batch_size        : 16
+num_train_epochs  : 1
+learning_rate     : 5e-05
+weight_decay      : 0.05
+bf16              : True
+```
+
 
 ---
 
