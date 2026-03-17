@@ -43,7 +43,9 @@ Before moving to Deep Learning, we evaluated our V1 dataset against traditional 
 * **Tested Models:** Naive Bayes, Linear SVM, Random Forest, Logistic Regression, and MLP.
 * **The "F1 Ceiling":** All traditional models failed to exceed a 65% F1-Score, proving that semantic nuance in code-mixed text requires transformer-based architectures.
 
-> **[PLACEHOLDER: Baseline_Performance_Comparison_Graph.png]**
+<p align="center">
+  <img src="images/basemodels.png"/>
+</p>
 
 ---
 
