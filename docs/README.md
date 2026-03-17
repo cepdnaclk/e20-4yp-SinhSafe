@@ -1,110 +1,98 @@
 ---
 layout: home
 permalink: index.html
-
-# Please update this with your repository name and title
 repository-name: e20-4yp-SinhSafe
 title: SinhSafe - Multi-Model Detection of Cyberbullying and Hate Speech
 ---
 
-[comment]: # "This is the standard layout for the project, but you can clean this and use your own template"
-
 ![SinhSafe Project Banner](./images/cover_page.jpg)
 
-# SinhSafe: Multi-Model Detection of Cyberbullying and Hate Speech
+# SinhSafe: An Iterative Deep Learning & Ensemble Approach to Sinhala Harassment Detection
 
 <div align="center">
-    <img src="./images/thumbnail.png" width="200">
+    <img src="./images/thumbnail.png" style="width:200px;">
 </div>
 
 #### Team
-
 - e20397, Thilakasiri P.D., [email](mailto:e20397@eng.pdn.ac.lk)
 
 #### Supervisors
-
-- Dr. Eng. Sampath Deegalla, [email](sampath@eng.pdn.ac.lk)
-
-#### Table of content
-
-1. [Abstract](#abstract)
-2. [Related works](#related-works)
-3. [Methodology](#methodology)
-4. [Experiment Setup and Implementation](#experiment-setup-and-implementation)
-5. [Results and Analysis](#results-and-analysis)
-6. [Conclusion](#conclusion)
-7. [Publications](#publications)
-8. [Links](#links)
+- Dr. Eng. Sampath Deegalla, [email](mailto:sampath@eng.pdn.ac.lk)
 
 ---
 
-## Abstract
+## Project Summary
+[cite_start]SinhSafe is a high-precision content moderation framework designed for the linguistic complexities of Sinhala and code-mixed Singlish[cite: 3, 41]. [cite_start]Traditional moderation tools often fail on local languages due to the "Semantic Gap"—the difficulty in distinguishing between general vulgarity (Offensive) and targeted, malicious attacks (Harassment)[cite: 39, 44]. 
 
-**SinhSafe** is an advanced abusive language detection framework specifically designed for the linguistic complexities of the Sinhala language and its code-mixed variant, Singlish. Addressing the critical gap in low-resource language safety tools, this project leverages state-of-the-art multilingual transformer models, specifically **XLM-RoBERTa (XLM-R)**, **SinBERT**, and **SinhLlama**, to classify social media content into three distinct categories: *Harassment*, *Offensive*, and *Normal*.
+[cite_start]This project addresses these challenges through a dual-phase iterative approach[cite: 4]. [cite_start]We established a rigorous ground truth of ~4,000 manually annotated documents using Inter-Annotator Agreement (IAA)[cite: 72, 87]. [cite_start]Finding that traditional ML baselines were capped at a ~65% F1-score, we engineered an ensemble of deep learning architectures: **XLM-RoBERTa (Large)**, **SinBERT**, and **SinLLaMA**[cite: 93, 168]. [cite_start]By deploying these models in a **3-Model Ensemble Pseudo-Labeling Engine**, we tripled our dataset size to a perfectly balanced V2 corpus of 16,545 documents[cite: 176, 183]. [cite_start]Our final production system utilizes a soft-voting ensemble of the encoder models, achieving a peak F1-score of **90.7%** while maintaining real-time inference efficiency[cite: 181, 201, 296].
 
-A key innovation of SinhSafe is its **3-Model Ensemble Pseudo-Labeling** pipeline, which is designed to generate a massive, high-quality corpus of ~65,000 documents from unlabelled data. By establishing a rigorous ground truth through Inter-Annotator Agreement and achieving a peak accuracy of **80.49%** in cross-validation, SinhSafe aims to provide nuanced content moderation solutions for Sri Lankan social media platforms, promoting safer online communities through AI-driven intervention.
+---
 
-## Related works
+## Methodology & The Data Engine
 
-Research into Sinhala cyberbullying detection has been constrained by a lack of diverse datasets and resources, a challenge highlighted by **Viswanath & Kumar (2023)**. 
+### 1. The Data Pipeline
+[cite_start]The SinhSafe pipeline begins with raw social media ingestion followed by a hybrid preprocessing engine[cite: 70, 71]:
+* [cite_start]**Noise Removal:** Custom scripts to strip handles (e.g., @user) and social media artifacts[cite: 86].
+* [cite_start]**Transliteration:** Integration of high-accuracy Singlish-to-Sinhala conversion[cite: 76, 86].
+* [cite_start]**Manual Annotation:** Establishing a baseline "Gold Standard" using strict rule sets for Harassment, Offensive, and Normal categories[cite: 64, 87].
 
-**Datasets & Classification Taxonomy**
-Most existing work, such as the *SOLD* and *semi-SOLD* datasets by **Ranasinghe et al. (2022)**, focuses on binary classification (Offensive vs. Not Offensive). We identified that binary labels are often insufficient for nuanced moderation. Consequently, our project draws significant inspiration from **Mathew et al. (2021)** and their *HateXplain* dataset. Following their approach, we moved beyond binary detection to a **3-class taxonomy (Harassment, Offensive, Normal)**, allowing for more fine-grained analysis of harmful content.
+### 2. Baseline Comparison
+[cite_start]Before moving to Deep Learning, we evaluated our V1 dataset against traditional algorithms[cite: 91, 92]:
+* [cite_start]**Tested Models:** Naive Bayes, Linear SVM, Random Forest, Logistic Regression, and MLP[cite: 111, 112, 113, 115, 121].
+* [cite_start]**The "F1 Ceiling":** All traditional models failed to exceed a 65% F1-Score, proving that semantic nuance in code-mixed text requires transformer-based architectures[cite: 93, 94].
 
-**Model Architectures**
-In the domain of model selection, **Dhananjaya et al. (2022)** demonstrated that monolingual models like **SinBERT** often outperform multilingual alternatives on small, specific Sinhala datasets. Conversely, the recent introduction of **SinLlama** by **Aravinda et al. (2025)** provides a foundation for testing Large Language Model (LLM) capabilities in Sinhala. SinhSafe benchmarks these distinct architectures (Multilingual XLM-R vs. Monolingual SinBERT vs. SinLlama) to determine the optimal approach.
+> **[PLACEHOLDER: Baseline_Performance_Comparison_Graph.png]**
 
-## Methodology
-
-The SinhSafe framework consists of three main stages:
-
-1.  **Data Collection & Curation:** Aggregating a consolidated dataset from multiple sources and establishing a rigorous Ground Truth using **Manual Annotation** and **Inter-Annotator Agreement (Peer Review)**.
-2.  **Taxonomy Definition (The "Umbrella" Approach):**
-    * **Harassment:** An umbrella term covering both Cyberbullying and Hate Speech. It targets intent to harm, threats, and self-harm encouragement.
-    * **Offensive:** General vulgarity, crude jokes, or profanity without malicious targeted intent.
-    * **Normal:** Non-abusive content.
-3.  **Hybrid Preprocessing Pipeline:**
-    * **Google Transliteration API:** High-accuracy online transliteration for normalizing Singlish content into Sinhala script.
-    * **Ensemble Strategy:** Using the consensus of XLM-R, SinLlama, and SinBERT to pseudo-label unlabelled data.
+---
 
 ## Experiment Setup and Implementation
 
-The models were trained using the Hugging Face `transformers` library on an NVIDIA RTX 3090 GPU. We utilized a custom classification head on the **XLM-RoBERTa Large** architecture to prevent overfitting:
+### 1. Model Architectures
+[cite_start]We engineered three distinct architectures, adding custom layers to prevent overfitting:
 
-* **Dense Layer:** A fully connected linear layer with **Tanh activation** to extract non-linear semantic features from the 1024-dimensional input vector.
-* **Dropout Layer:** Implemented with a probability of 0.1 to randomly deactivate neurons during training. This "Anti-Misfit" mechanism forces the model to learn robust linguistic patterns rather than memorizing specific training examples.
-* **Optimization:** AdamW optimizer with a learning rate of $2 \times 10^{-5}$ and a 500-step linear warmup.
+* [cite_start]**XLM-RoBERTa (Large):** Features a custom dense head with **20% Dropout** and **GELU activation** to manage the 1024-dimensional feature vector[cite: 130, 131, 132].
+* **SinBERT (LSTM-Head):** Utilizes a **Bi-Directional LSTM** (512 units) with **Dual-Pooling** (Average + Max) to capture long-range dependencies in native Sinhala script[cite: 141, 143].
+* [cite_start]**SinLLaMA (8B):** An instruction-tuned LLM using **4-bit NF4 Quantization (QLoRA)** and **LoRA** adapters for parameter-efficient tuning[cite: 153, 154].
+
+### 2. Training Strategies
+* [cite_start]**Validation:** We used **5-Fold Stratified Cross-Validation** for encoder models, selecting the "Best Fold" based on high weighted precision and lowest evaluation loss[cite: 137, 163].
+* **Early Stopping:** For SinLLaMA, we implemented a patience-based stop (3 consecutive intervals of 50 steps) to recall the lowest evaluation loss checkpoint, preventing "Testing Collapse"[cite: 158, 165, 234].
+
+---
+
+## The Ensemble Pseudo-Labeling Engine (V1 to V2)
+
+To overcome data scarcity, we deployed our "V1 Production Models" on 145,000 unlabelled social media comments[cite: 176, 178]. We applied a **Strict Extraction Logic** to build our final V2 Dataset[cite: 179]:
+1. **Direct Extraction:** Any label where at least one model had **>90% confidence**[cite: 180].
+2. **Consensus Extraction:** Confidence between **80-90%** where XLM-R and SinBERT agreed[cite: 181].
+3. **Manual Review:** Confidence between **40-80%** where all three models agreed; these were manually verified before inclusion[cite: 182].
+
+This process allowed us to extend the Harassment class to 5,515 documents, creating a perfectly balanced dataset for final production training[cite: 183].
+
+---
 
 ## Results and Analysis
 
-We validated our model using **5-Fold Stratified Cross-Validation** to ensure stability across different data splits. This rigorous testing confirmed that the model is robust to the linguistic variance found in social media comments.
+The transition to the V2 dataset resulted in a massive performance leap across all architectures[cite: 191].
 
-**Phase 1 Results: XLM-RoBERTa (Large)**
+| Model | Parameter Size | V1 F1-Score | V2 F1-Score |
+| :--- | :--- | :--- | :--- |
+| **SinBERT** | ~110 Million | 77.9% | **90.7%** |
+| **XLM-R** | ~550 Million | 80.4% | **86.9%** |
+| **SinLLaMA** | ~8 Billion | 55.7% | 64.9% |
 
-| Metric | Result | Description |
-| :--- | :--- | :--- |
-| **Peak Accuracy** | **80.49%** | Achieved in Fold 3, representing the model's optimal performance capability. |
-| **Average Accuracy** | **76.43%** | The mean accuracy across all 5 folds, proving high stability. |
-| **Stability Insight** | **Epoch 3** | We observed that validation loss begins to diverge after Epoch 3, indicating the start of overfitting. Our final model uses early stopping to capture this optimal state. |
+> **[PLACEHOLDER: V1_vs_V2_Performance_Comparison_Graph.png]**
+> **[PLACEHOLDER: Training_Loss_Curves_All_Models.png]**
 
-**Phase 2: Comparative Benchmarking (In Progress)**
-Experiments are currently underway for **SinBERT** and **SinhLlama**. Once completed, their performance will be tabulated here to determine the most effective architecture for the final ensemble.
+### The "LLM Memorization Trap"
+[cite_start]A critical discovery was the failure of SinLLaMA to generalize[cite: 237]. [cite_start]Despite its 8B parameters, it exhibited **Severe Overfitting**, crashing to 64.9% on unseen test data, whereas the lightweight Encoders (SinBERT/XLM-R) learned general linguistic rules more effectively[cite: 234, 235].
+
+---
 
 ## Conclusion
-
-SinhSafe successfully establishes a robust pipeline for Sinhala cyberbullying detection, moving beyond simple binary classification to a nuanced **Harassment vs. Offensive** taxonomy. Preliminary results with XLM-RoBERTa Large indicate that fine-grained classification in low-resource settings is highly achievable, with a peak accuracy of **80.49%**. The ongoing comparison with SinBERT and SinhLlama will provide a definitive benchmark for the research community, identifying the optimal model architecture for protecting the Sri Lankan digital ecosystem.
-
-## Publications
-[//]: # "Note: Uncomment each once you uploaded the files to the repository"
+[cite_start]The final **SinhSafe Production Ensemble** utilizes **Soft-Voting (Probability Averaging)** between XLM-RoBERTa and SinBERT[cite: 277, 281]. [cite_start]This configuration provides a culturally aware, real-time moderation solution that outperforms traditional baselines while avoiding the massive computational overhead of generative LLMs[cite: 295, 297].
 
 ## Links
-
-[//]: # ( NOTE: EDIT THIS LINKS WITH YOUR REPO DETAILS )
-
 - [Project Repository](https://github.com/cepdnaclk/e20-4yp-SinhSafe)
-- [Project Page](https://cepdnaclk.github.io/e20-4yp-SinhSafe)
+- [Project Demo Video](https://cepdnaclk.github.io/e20-4yp-SinhSafe)
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
-- [University of Peradeniya](https://eng.pdn.ac.lk/)
-
-[//]: # "Please refer this to learn more about Markdown syntax"
-[//]: # "https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet"
