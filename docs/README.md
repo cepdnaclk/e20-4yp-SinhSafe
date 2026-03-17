@@ -97,11 +97,15 @@ We utilized **5-Fold Stratified Cross-Validation** to isolate the best-performin
 <p align="center">
   <img src="images/sinbert/SinBERT_Metrics_Comparison.png" alt="SinBERT Metric Comparison" style="width: 80%;">
 </p>
-### Rationale for Selecting Version 4
+<br>
+
+<h3 style="margin-top: 20px;">Rationale for Selecting Version 4</h3>
 
 Based on the comprehensive metric comparison and loss curve analysis, we selected **Version 4** as our optimal SinBERT model. While Versions 2 and 3 showed marginally higher raw accuracy, Version 4 demonstrated an exceptionally strong **Weighted Precision**, which is critical in moderation systems to minimize **"False Positives"** (unfairly penalizing normal users). 
 
 Furthermore, the V4 Loss Curve presented a mathematically perfect early-stopping threshold: the evaluation loss hit a distinct, sharp minimum exactly at **Epoch 2**. By halting training at this exact checkpoint, we captured the model at its absolute peak generalization, completely avoiding the severe overfitting observed in the later epochs of the other versions.
+
+<br>
 
 **🏆 Winning Parameters for Production Model(SinBERT Best Version):**
 ```text
@@ -138,11 +142,15 @@ Similar to SinBERT, XLM-R was evaluated using Stratified 5-Fold Cross-Validation
   <img src="images/xlm/XLMR_Metrics_Comparison.png" alt="XLM-R Metric Comparison" style="width: 80%;">
 </p>
 
-### Rationale for Selecting Version 2
+<br>
+
+<h3 style="margin-top: 20px;">Rationale for Selecting Version 2</h3>
 
 Based on the multi-version benchmark, we selected **Version 2** as the production-ready model for the XLM-RoBERTa architecture. Version 2 achieved the highest **F1-Score (80.41%)** and **Accuracy (80.46%)** across all tested iterations. 
 
 While the loss curves indicate that Version 2 eventually began to overfit as training progressed, our implementation of **Early Stopping** allowed us to capture the model weights at the optimal convergence point (Epoch 3). This balanced peak performance with sufficient generalization to handle the linguistic variance in our large-scale unlabeled dataset.
+
+<br>
 
 **🏆 Winning Parameters for Production Model(XLM-R Best Version):**
 ```text
@@ -155,17 +163,42 @@ weight_decay     : 0.01
 #### C. SinLLaMA (8B) - 4 Versions Tested
 For the Generative LLM, we evaluated via an 80/10/10 Train/Val/Test split. To prevent the "Testing Collapse" caused by memorization, we implemented strict **Early Stopping**: training halted if evaluation loss increased for 3 consecutive intervals (every 50 steps), capturing the checkpoint with the absolute lowest evaluation loss.
 
-> **[PLACEHOLDER: SinLLaMA Version 1 Loss Curve]**
-
-> **[PLACEHOLDER: SinLLaMA Version 2 Loss Curve]**
-
-> **[PLACEHOLDER: SinLLaMA Version 3 Loss Curve]**
-
-> **[PLACEHOLDER: SinLLaMA Version 4 Loss Curve]**
-
+<table>
+  <tr>
+    <td align="center">
+      <strong>Version 1</strong><br>
+      <img src="images/siinllama/SinLLaMA_Version_1_Loss_Curve.png" alt="SinLLaMA V1">
+    </td>
+    <td align="center">
+      <strong>Version 2</strong><br>
+      <img src="images/siinllama/SinLLaMA_Version_2_Loss_Curve.png" alt="SinLLaMA V2">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Version 3</strong><br>
+      <img src="images/siinllama/SinLLaMA_Version_3_Loss_Curve.png" alt="SinLLaMA V3">
+    </td>
+    <td align="center">
+      <strong>Version 4</strong><br>
+      <img src="images/siinllama/SinLLaMA_Version_4_Loss_Curve.png" alt="SinLLaMA V4">
+    </td>
+  </tr>
+</table>
 
 **SinLLaMA Performance Comparison**
-> **[PLACEHOLDER: SinLLaMA Versions Metric Comparison Graph]**
+<p align="center">
+  <img src="images/siinllama/SinLLaMA_Metrics_Comparison.png" alt="SinLLaMA Metric Comparison" style="width: 80%;">
+</p>
+
+<br>
+
+<h3 style="margin-top: 20px;">Rationale for Selecting Version 3</h3>
+
+For the SinLLaMA architecture, **Version 3** was selected as the optimal configuration. This version achieved the highest overall performance metrics, specifically reaching a peak **F1-Score of 65.66%**. 
+
+While the 8B parameter model exhibited a high tendency to overfit (as seen in the diverging loss curves of other versions), Version 3 maintained a more stable evaluation loss across training steps. By leveraging the specific hyperparameters of this iteration, we were able to maximize the generative potential of the model for our pseudo-labeling engine while mitigating the "Memorization Trap" common in large-scale instruction tuning.
+<br>
 
 **🏆 Winning Parameters for Production Model(SinLLaMA Best Version):**
 ```text
