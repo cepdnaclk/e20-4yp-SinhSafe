@@ -253,14 +253,27 @@ The transition to the V2 dataset resulted in a massive performance leap across a
 ### Optimal Epoch & Loss Curves
 By tracking training and evaluation loss, we successfully identified the best epoch to run our 100% data training without overfitting or underfitting.
 
-> **[PLACEHOLDER: SinBERT_Best_Version_Loss_Curve.png]**
-
-> **[PLACEHOLDER: XLM-R_Best_Version_Loss_Curve.png]**
+<table>
+  <tr>
+    <td align="center">
+      <strong>SinBERT Production Model</strong><br>
+      <img src="images/SinBERT_Best_Version_Loss_Curve.png" alt="SinBERT Best Production Curve">
+    </td>
+    <td align="center">
+      <strong>XLM-RoBERTa Production Model</strong><br>
+      <img src="images/XLM_Best_Version_Loss_Curve.png" alt="XLM-R Best Production Curve">
+    </td>
+  </tr>
+</table>
 
 ### The "LLM Memorization Trap"
 A critical discovery was the failure of SinLLaMA to generalize. Despite its 8B parameters, it exhibited **Severe Overfitting**, crashing to 64.9% on unseen test data, whereas the lightweight Encoders (SinBERT/XLM-R) learned general linguistic rules more effectively. 
 
-> **[PLACEHOLDER: SinLLaMA_Testing_Collapse_Loss_Curve.png]**
+<p align="center">
+  <img src="images/sinllama_memorization_trap.png" alt="SinLLaMA Memorization Trap Graph" style="width: 80%;">
+  <br>
+  <em>Figure: Visualizing the divergence between training and evaluation loss, indicating a collapse in generalization.</em>
+</p>
 
 ---
 
