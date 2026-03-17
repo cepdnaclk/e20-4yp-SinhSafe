@@ -5,13 +5,16 @@ import torch.nn.functional as F
 import numpy as np
 from transformers import AutoTokenizer, AutoModel, XLMRobertaTokenizer, XLMRobertaForSequenceClassification
 
+# --- 0. IMPORT YOUR CUSTOM PREPROCESSING ENGINE ---
+from src.process_ground_truth import clean_and_process
+
 # --- 1. CRITICAL: GPU TARGETING ---
 os.environ["CUDA_VISIBLE_DEVICES"] = "2" # Running on GPU 2
 
 # --- 2. PATHS TO YOUR SAVED PRODUCTION MODELS ---
 # Make sure these match exactly where you saved the final production runs!
-SINBERT_PATH = "/scratch1/e20-4yp-sinhsafe/models/sinbert_production"
-XLM_PATH = "/scratch1/e20-4yp-sinhsafe/models/xlm_production"
+SINBERT_PATH = "/scratch1/e20-4yp-sinhsafe/sinbert_prod_model"
+XLM_PATH = "/scratch1/e20-4yp-sinhsafe/xlm_prod_model"
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 LABELS = {0: "Normal", 1: "Offensive", 2: "Harassment"}
@@ -58,7 +61,7 @@ class SinhSafeClassifier(XLMRobertaForSequenceClassification):
 print("📂 Loading SinBERT Production Model...")
 sinbert_tokenizer = AutoTokenizer.from_pretrained(SINBERT_PATH)
 sinbert_model = SinBERTClassifier(n_classes=3).to(DEVICE)
-sinbert_model.load_state_dict(torch.load(os.path.join(SINBERT_PATH, "sinbert_production_model.bin")))
+sinbert_model.load_state_dict(torch.load(os.path.join(SINBERT_PATH, "best_sinbert_model.bin")))
 sinbert_model.eval()
 
 print("📂 Loading XLM-RoBERTa Production Model...")
@@ -67,10 +70,10 @@ xlm_model = SinhSafeClassifier.from_pretrained(XLM_PATH).to(DEVICE)
 xlm_model.eval()
 
 # --- 5. THE ENSEMBLE LOGIC ---
-def predict_text(text):
-    # 1. Prepare inputs
-    sin_inputs = sinbert_tokenizer(text, max_length=128, padding='max_length', truncation=True, return_tensors='pt').to(DEVICE)
-    xlm_inputs = xlm_tokenizer(text, max_length=256, padding='max_length', truncation=True, return_tensors='pt').to(DEVICE)
+def predict_text(raw_text, cleaned_text):
+    # 1. Prepare inputs (using the CLEANED text)
+    sin_inputs = sinbert_tokenizer(cleaned_text, max_length=128, padding='max_length', truncation=True, return_tensors='pt').to(DEVICE)
+    xlm_inputs = xlm_tokenizer(cleaned_text, max_length=256, padding='max_length', truncation=True, return_tensors='pt').to(DEVICE)
 
     with torch.no_grad():
         # 2. Get raw logits
@@ -85,10 +88,12 @@ def predict_text(text):
     sin_harass_conf = sin_probs[2]
     xlm_harass_conf = xlm_probs[2]
 
-    print("\n" + "-"*55)
-    print(f"📝 Input: {text}")
-    print(f"🤖 SinBERT Probs: [Norm: {sin_probs[0]:.2f}, Offen: {sin_probs[1]:.2f}, Harass: {sin_probs[2]:.2f}]")
-    print(f"🌐 XLM-R Probs  : [Norm: {xlm_probs[0]:.2f}, Offen: {xlm_probs[1]:.2f}, Harass: {xlm_probs[2]:.2f}]")
+    print("\n" + "="*60)
+    print(f"👤 Raw Input      : {raw_text}")
+    print(f"🧹 Cleaned Output : {cleaned_text}")
+    print("-" * 60)
+    print(f"🤖 SinBERT Probs  : [Norm: {sin_probs[0]:.2f}, Offen: {sin_probs[1]:.2f}, Harass: {sin_probs[2]:.2f}]")
+    print(f"🌐 XLM-R Probs    : [Norm: {xlm_probs[0]:.2f}, Offen: {xlm_probs[1]:.2f}, Harass: {xlm_probs[2]:.2f}]")
 
     # --- 4. APPLY CUSTOM SUPERVISOR LOGIC ---
     
@@ -101,21 +106,33 @@ def predict_text(text):
     else:
         # Rule 2: Soft Voting (Average the probabilities)
         avg_probs = (sin_probs + xlm_probs) / 2
-        print(f"⚖️ Averaged Probs: [Norm: {avg_probs[0]:.2f}, Offen: {avg_probs[1]:.2f}, Harass: {avg_probs[2]:.2f}]")
+        print(f"⚖️ Averaged Probs : [Norm: {avg_probs[0]:.2f}, Offen: {avg_probs[1]:.2f}, Harass: {avg_probs[2]:.2f}]")
         
         # Rule 3: Pick the highest average
         final_id = np.argmax(avg_probs)
         final_class = LABELS[final_id]
         final_confidence = avg_probs[final_id] * 100
 
-    print(f"🏆 FINAL PREDICTION: >> {final_class} << (Confidence: {final_confidence:.2f}%)")
-    print("-" * 55)
+    print(f"\n🏆 FINAL PREDICTION: >> {final_class} << (Confidence: {final_confidence:.2f}%)")
+    print("=" * 60)
 
 # --- 6. INTERACTIVE TESTING ---
 if __name__ == "__main__":
     print("\n✅ Ensemble Ready! Type 'exit' to stop.")
     while True:
-        user_input = input("\nType a Sinhala/Singlish sentence: ")
-        if user_input.lower() == 'exit':
+        raw_user_input = input("\nType a Sinhala/Singlish sentence: ")
+        
+        if raw_user_input.lower() == 'exit':
             break
-        predict_text(user_input)
+            
+        print("⚙️ Processing through Data Engine...")
+        # Clean and transliterate the text FIRST
+        processed_input = clean_and_process(raw_user_input)
+        
+        # Catch edge cases where the user just typed "@USER" or a URL
+        if not processed_input.strip():
+            print("⚠️ Input was empty after removing noise (URLs/Mentions). Try again.")
+            continue
+            
+        # Send both the raw and cleaned text to the prediction function
+        predict_text(raw_text=raw_user_input, cleaned_text=processed_input)
