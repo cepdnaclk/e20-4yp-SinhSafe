@@ -97,6 +97,7 @@ We utilized **5-Fold Stratified Cross-Validation** to isolate the best-performin
 <p align="center">
   <img src="images/sinbert/SinBERT_Metrics_Comparison.png" alt="SinBERT Metric Comparison" style="width: 80%;">
 </p>
+> **Rationale for Selecting Version 4:** > Based on the comprehensive metric comparison and loss curve analysis, we selected **Version 4** as our optimal SinBERT model. While Versions 2 and 3 showed marginally higher raw accuracy, Version 4 demonstrated an exceptionally strong **Weighted Precision**, which is critical in moderation systems to minimize "False Positives" (unfairly penalizing normal users). Furthermore, the V4 Loss Curve presented a mathematically perfect early-stopping threshold: the evaluation loss hit a distinct, sharp minimum exactly at **Epoch 2**. By halting training at this exact checkpoint, we captured the model at its absolute peak generalization, completely avoiding the severe overfitting observed in the later epochs of the other versions.
 
 **🏆 Winning Parameters for Production Model(SinBERT Best Version):**
 ```text
