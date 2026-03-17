@@ -232,7 +232,7 @@ The transition to the V2 dataset resulted in a massive performance leap across a
 | :--- | :--- | :--- | :--- |
 | **SinBERT** | ~110 Million | 77.9% | **90.7%** |
 | **XLM-R** | ~550 Million | 80.4% | **86.9%** |
-| **SinLLaMA** | ~8 Billion | 55.7% | 64.9% |
+| **SinLLaMA** | ~8 Billion | 55.7% | **64.9%** |
 
 <table>
   <tr>
