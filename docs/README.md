@@ -64,18 +64,39 @@ To find the perfect training arguments (learning rate, batch size, weight decay)
 #### A. SinBERT (LSTM-Head) - 5 Versions Tested
 We utilized **5-Fold Stratified Cross-Validation** to isolate the best-performing epoch and evaluate stability across different data splits.
 
-> **[PLACEHOLDER: SinBERT Version 1 Loss Curve]**
-
-> **[PLACEHOLDER: SinBERT Version 2 Loss Curve]**
-
-> **[PLACEHOLDER: SinBERT Version 3 Loss Curve]**
-
-> **[PLACEHOLDER: SinBERT Version 4 Loss Curve]**
-
-> **[PLACEHOLDER: SinBERT Version 5 Loss Curve]**
+<table>
+  <tr>
+    <td align="center">
+      <strong>Version 1</strong><br>
+      <img src="images/sinbert/SinBERT_Version_1_Loss_Curve.png" alt="SinBERT V1">
+    </td>
+    <td align="center">
+      <strong>Version 2</strong><br>
+      <img src="images/sinbert/SinBERT_Version_2_Loss_Curve.png" alt="SinBERT V2">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <strong>Version 3</strong><br>
+      <img src="images/sinbert/SinBERT_Version_3_Loss_Curve.png" alt="SinBERT V3">
+    </td>
+    <td align="center">
+      <strong>Version 4</strong><br>
+      <img src="images/sinbert/SinBERT_Version_4_Loss_Curve.png" alt="SinBERT V4">
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <strong>Version 5</strong><br>
+      <img src="images/sinbert/SinBERT_Version_5_Loss_Curve.png" alt="SinBERT V5" style="width: 50%;">
+    </td>
+  </tr>
+</table>
 
 **SinBERT Performance Comparison**
-> **[PLACEHOLDER: SinBERT Versions Metric Comparison Graph]**
+<p align="center">
+  <img src="images/sinbert/SinBERT_Metrics_Comparison.png" alt="SinBERT Metric Comparison" style="width: 80%;">
+</p>
 
 **🏆 Winning Parameters for Production Model(SinBERT Best Version):**
 ```text
@@ -97,7 +118,7 @@ Similar to SinBERT, XLM-R was evaluated using Stratified 5-Fold Cross-Validation
 **XLM-RoBERTa Performance Comparison**
 > **[PLACEHOLDER: XLM-R Versions Metric Comparison Graph]**
 
-**🏆 Winning Parameters Production Model(XLM-R Best Version):**
+**🏆 Winning Parameters for Production Model(XLM-R Best Version):**
 ```text
 num_train_epochs : 10
 batch_size       : 32
@@ -116,10 +137,11 @@ For the Generative LLM, we evaluated via an 80/10/10 Train/Val/Test split. To pr
 
 > **[PLACEHOLDER: SinLLaMA Version 4 Loss Curve]**
 
+
 **SinLLaMA Performance Comparison**
 > **[PLACEHOLDER: SinLLaMA Versions Metric Comparison Graph]**
 
-**🏆 Winning Parameters Production Model(SinLLaMA Best Version):**
+**🏆 Winning Parameters for Production Model(SinLLaMA Best Version):**
 ```text
 max_length        : 512
 batch_size        : 16
@@ -130,16 +152,19 @@ bf16              : True
 ```
 
 
+### 3. Synthesizing V1 Production Models
+After identifying the optimal hyperparameters and the exact "best-fit" epoch for each architecture, we moved out of the cross-validation phase. We retrained **XLM-RoBERTa**, **SinBERT**, and **SinLLaMA** on **100% of the V1 Dataset (6,075 documents)** using these winning parameters. This maximized the models' knowledge retention, resulting in three highly robust, inference-ready "V1 Production Models."
+
 ---
 
 ## The Ensemble Pseudo-Labeling Engine (V1 to V2)
 
-To overcome data scarcity, we deployed our "V1 Production Models" on 145,000 unlabelled social media comments. We applied a **Strict Extraction Logic** to build our final V2 Dataset:
+To overcome data scarcity, we deployed these three V1 Production Models on 145,000 unlabelled social media comments. We applied a **Strict Extraction Logic** to build our final V2 Dataset:
 1. **Direct Extraction:** Any label where at least one model had **>90% confidence**.
 2. **Consensus Extraction:** Confidence between **80-90%** where XLM-R and SinBERT agreed.
 3. **Manual Review:** Confidence between **40-80%** where all three models agreed; these were manually verified before inclusion.
 
-This process allowed us to extend the Harassment class to 5,515 documents, creating a perfectly balanced dataset for final production training.
+This process allowed us to extend the Harassment class to 5,515 documents, creating a perfectly balanced V2 dataset (16,545 documents total) for final production training.
 
 ---
 
