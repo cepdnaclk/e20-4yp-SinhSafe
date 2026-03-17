@@ -237,7 +237,18 @@ The transition to the V2 dataset resulted in a massive performance leap across a
 | **XLM-R** | ~550 Million | 80.4% | **86.9%** |
 | **SinLLaMA** | ~8 Billion | 55.7% | 64.9% |
 
-> **[PLACEHOLDER: V1_vs_V2_Performance_Comparison_Graph.png]**
+<table>
+  <tr>
+    <td align="center">
+      <strong>V1 to V2 Performance Leap</strong><br>
+      <img src="images/final_f1_leap.png" alt="F1 Score Leap">
+    </td>
+    <td align="center">
+      <strong>Production Models: Final Eval Loss</strong><br>
+      <img src="images/final_eval_loss.png" alt="Final Evaluation Loss">
+    </td>
+  </tr>
+</table>
 
 ### Optimal Epoch & Loss Curves
 By tracking training and evaluation loss, we successfully identified the best epoch to run our 100% data training without overfitting or underfitting.
