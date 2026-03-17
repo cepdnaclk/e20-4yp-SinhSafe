@@ -16,7 +16,7 @@ title: SinhSafe - Multi-Model Detection of Cyberbullying and Hate Speech
 </p>
 
 #### Team
-- e20397, Thilakasiri P.D., [email](mailto:e20397@eng.pdn.ac.lk)
+- E20397, Thilakasiri P.D., [email](mailto:e20397@eng.pdn.ac.lk)
 
 #### Supervisors
 - Dr. Eng. Sampath Deegalla, [email](mailto:sampath@eng.pdn.ac.lk)
@@ -280,7 +280,14 @@ A critical discovery was the failure of SinLLaMA to generalize. Despite its 8B p
 ## Conclusion
 The final **SinhSafe Production Ensemble** utilizes **Soft-Voting (Probability Averaging)** between XLM-RoBERTa and SinBERT. This configuration provides a culturally aware, real-time moderation solution that outperforms traditional baselines while avoiding the massive computational overhead of generative LLMs.
 
+## Project Demo
+<p align="center">
+  <video width="640" height="360" controls>
+    <source src="images/demo.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+</p>
+
 ## Links
 - [Project Repository](https://github.com/cepdnaclk/e20-4yp-SinhSafe)
-- [Project Demo Video](https://cepdnaclk.github.io/e20-4yp-SinhSafe)
 - [Department of Computer Engineering](http://www.ce.pdn.ac.lk/)
