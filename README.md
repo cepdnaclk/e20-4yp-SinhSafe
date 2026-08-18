@@ -6,7 +6,7 @@ This repository hosts the dataset preprocessing scripts, annotation protocol, an
 
 ## 👤 Author Information
 * **Author:** P.D. Thilakasiri (E/20/397)
-* **Co-authors / Supervisors:** D. Herath, Dr. Eng. Sampath Deegalla
+* **Co-authors / Supervisors:** Dr. Eng. Damayanthi Herath, Dr. Eng. Sampath Deegalla
 * **Institution:** University of Peradeniya, Sri Lanka
 * **Contact:** e20397@eng.pdn.ac.lk
 
