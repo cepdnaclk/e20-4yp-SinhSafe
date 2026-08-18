@@ -1,49 +1,72 @@
-# SinhSafe: Multi-Model Detection of Cyberbullying and Hate Speech
+# SinhSafe: A Deep Learning Approach to Sinhala Harassment Detection
 
-**SinhSafe** is a research project focused on detecting abusive language in the Sinhala and Singlish (Sinhala written in English script) domains. Unlike simple binary classification systems, this project distinguishes between targeted **Harassment** (including Cyberbullying & Hate Speech) and general **Offensive** language (vulgarity without harmful intent).
+**SinhSafe** is a research project focused on detecting harmful language in code-mixed Sinhala–English ("Singlish") text. Rather than a binary flag/no-flag system, SinhSafe uses a **ternary classifier** that separates ordinary colloquial speech from crude-but-harmless language and genuinely targeted harassment — closing the semantic gap that causes traditional moderation systems to over-censor normal speech or under-flag real harm.
 
-This repository hosts the dataset consolidation scripts, manual annotation guidelines, inter-annotator agreement protocols, and the training pipeline for our **XLM-RoBERTa Large** model.
+This repository hosts the dataset preprocessing scripts, annotation protocol, and training pipeline for our benchmarked models: traditional ML baselines, transformer encoders (SinBERT, XLM-RoBERTa), and a generative LLM (SinLLaMA-8B), plus the soft-voting ensemble of the two best encoders.
 
 ## 👤 Author Information
-* **Author:** Thilakasiri P.D.
-* **Index Number:** E/20/397
-* **Institution:** University of Peradeniya
-* **Supervisor:** Dr. Eng. Sampath Deegalla
+* **Author:** P.D. Thilakasiri (E/20/397)
+* **Co-authors / Supervisors:** D. Herath, Dr. Eng. Sampath Deegalla
+* **Institution:** University of Peradeniya, Sri Lanka
+* **Contact:** e20397@eng.pdn.ac.lk
 
 ## 📌 Project Overview
-* **Goal:** To create a robust detection system for low-resource languages and generate a massive, high-quality annotated corpus for the Sinhala NLP community.
-* **Core Innovation:** We utilize a **3-Model Ensemble** (XLM-R, SinLlama, SinBERT) to "pseudo-label" a large unlabelled dataset (~65,000 documents), effectively solving the data scarcity problem in Sinhala NLP.
+* **Goal:** Build a robust ternary classifier that accurately separates **Normal**, **Offensive**, and **Harassment** content in code-mixed Sinhala text.
+* **Approach:** Benchmark across the full spectrum of NLP methods — traditional ML, bidirectional transformer encoders, and a generative LLM — then determine whether combining the best models actually improves on the best single model, using statistically rigorous evaluation (bootstrap confidence intervals), not just raw score comparison.
 
-### Classification Classes (The "Umbrella" Approach)
-We shifted our research direction to use **"Harassment"** as an umbrella term to capture broader forms of abuse.
-1.  **Harassment (Cyberbullying & Hate Speech):** Targeted behavior meant to degrade, threaten, or intimidate. Includes threats of violence, self-harm encouragement, and attacks on family/ethnicity.
-2.  **Offensive:** Content that violates social norms (profanity, crude jokes, "blue" humor) but lacks a specific target or malicious intent.
-3.  **Normal:** Standard, respectful communication.
+### Classification Classes (Ternary)
+1. **Normal:** Everyday, non-offensive speech and colloquial slang.
+2. **Offensive:** Rude or crude language without targeted intent to harm.
+3. **Harassment:** Targeted, harmful content aimed at an individual or group.
 
 ## 🧪 Methodology & Architecture
 
-### 1. Data Curation (Human-in-the-Loop)
-* **Consolidation:** Merged multiple raw datasets and removed duplicates.
-* **Ground Truth:** Established via rigorous **Manual Annotation** and verified using **Inter-Annotator Agreement** (Peer Review) to resolve linguistic ambiguities in Singlish.
-* **Preprocessing:** Utilized the **Google Transliteration API** to standardize Singlish text into Sinhala script.
+### 1. Data Engineering & Preprocessing
+* **Source:** 6,075 documents sourced from SOLD (Ranasinghe et al., 2022) — the Sinhala Offensive Language Dataset.
+* **Cleaning & Transliteration:** Stripped noise (e.g. `@user`); Singlish → Sinhala via the Google Translate API.
+* **Annotation & QC:** 3 annotators labeled independently; inter-annotator agreement measured; majority voting used to resolve disagreements.
+* **Final Split:** Stratified 90% train / 10% held-out test (random state fixed at 42 for full reproducibility). Class distribution is imbalanced — roughly 38% Normal, 33% Offensive, 28% Harassment (minority class) — so stratified sampling is used for every split and every cross-validation fold.
 
-### 2. Model Architecture: XLM-RoBERTa Large
-We fine-tuned the **XLM-RoBERTa Large** model (550M parameters) with a custom classification head designed to prevent overfitting ("misfitting"):
-* **Input:** 1024-dimensional latent vector from the `<s>` (CLS) token.
-* **Dense Layer:** A fully connected linear layer with **Tanh activation** to extract non-linear semantic features.
-* **Dropout Layer:** Implemented to randomly deactivate neurons ($p=0.1$) during training, forcing the model to learn robust linguistic patterns rather than memorizing specific words.
+### 2. Three Modeling Approaches
+Benchmarked in order of increasing complexity (Occam's Razor: only add complexity that earns better held-out performance):
 
-### 3. Ensemble Pseudo-Labeling (Final Phase)
-We are currently fine-tuning **SinLlama-7B** and **SinBERT** to work alongside XLM-R. The consensus of these three models will be used to automatically label a massive raw dataset, creating the largest available corpus for Sinhala abusive language detection.
-
-## 📊 Results (Preliminary)
-We validated our model using **5-Fold Stratified Cross-Validation** to ensure stability across different data splits.
-
-| Metric | Result |
+| Family | Models |
 | :--- | :--- |
-| **Peak Accuracy (Fold 3)** | **80.49%** |
-| **Average Accuracy** | **76.43%** |
-| **Optimization** | Overfitting observed after Epoch 3; addressed via Early Stopping. |
+| Traditional ML | Naïve Bayes, Logistic Regression, Linear SVM, Random Forest, MLP |
+| Transformer Encoders (bidirectional, non-generative) | SinBERT Large (~110M), XLM-RoBERTa Large (~550M), each with a Bi-LSTM / GELU classification head |
+| Generative LLM (decoder-only, autoregressive) | SinLLaMA-8B, fine-tuned with QLoRA + Alpaca-style prompting |
+
+### 3. Architecture Optimization
+* 12 model versions engineered on the 90% training partition (5 SinBERT, 3 XLM-RoBERTa, 4 SinLLaMA).
+* Stratified 5-fold CV for SinBERT & XLM-RoBERTa; stratified 80/10 split within the training partition for SinLLaMA (full CV wasn't practical at 8B parameters).
+* Early stopping on eval-loss for all three, to select the best epoch before the training/validation loss curves diverge (overfitting).
+
+### 4. Ensemble
+Final ensemble is a **soft-voting combination of SinBERT + XLM-RoBERTa Large's predicted probabilities** — not a 3-model pseudo-labeling scheme. SinLLaMA was excluded from the ensemble due to its poor generalization (see below).
+
+## 📊 Results
+
+Evaluated as **macro F1** on the 10% held-out test set (best configs, trained on 100% of the 90% partition):
+
+| Model | Macro F1 | 95% CI (bootstrap, 1,000 iterations) |
+| :--- | :--- | :--- |
+| Traditional ML baselines | ~65% (plateau) | — |
+| SinBERT Large | 73.44% | [69.83%, 77.02%] |
+| XLM-RoBERTa Large | 75.44% | [71.95%, 78.89%] |
+| SinLLaMA-8B | 55.7% | — (severe overfitting) |
+| **SinhSafe Ensemble** | **76.21%** | [72.96%, 79.66%] |
+
+**Is the ensemble actually better?** The ensemble's advantage over standalone XLM-RoBERTa is only +0.89% (95% CI: [-1.61%, 3.36%]) — the interval crosses zero, so it is **not statistically significant**. A well-tuned standalone XLM-RoBERTa performs comparably to the costlier ensemble.
+
+### Why Did the LLM Fail?
+SinLLaMA-8B achieved high training accuracy but collapsed to 55.7% macro F1 on unseen data — a training/validation loss divergence indicating the model memorized training examples rather than learning generalizable patterns, likely because the fine-tuning data was small relative to the model's 8B-parameter scale. **Takeaway:** in data-scarce, low-resource NLP settings, encoder-only transformers with dedicated classification heads generalize far more reliably than large generative models fine-tuned on the same limited data — bigger isn't always better.
+
+## 🚀 Proposed Deployment: Human-in-the-Loop Pipeline
+Not an automatic censor — a decision-support pipeline:
+1. Standalone XLM-RoBERTa scores incoming content (Normal / Offensive / Harassment).
+2. Low-confidence predictions are routed to human moderators, not auto-actioned.
+3. Human-reviewed and high-confidence cases are fed back into the dataset.
+4. The model is periodically retrained, improving accuracy and fairness over time.
 
 ## 📂 Repository Structure
 
@@ -57,8 +80,8 @@ SinhSafe/
 ├── src/                        # Source code directory
 ├── venv/                       # Virtual environment
 ├── .gitignore                  # Git ignore file
-├── calculate_f1.py             # Script to calculate F1 scores specifically
-├── check_gpu.py                # Utility to verify RTX 3090 availability
+├── calculate_f1.py             # Script to calculate macro F1 scores
+├── check_gpu.py                # Utility to verify GPU availability
 ├── data_process_output.log     # Logs from data preprocessing steps
 ├── debug_train.py              # Lightweight training script for debugging
 ├── f1_scores.log               # Log file specifically for F1 metrics
@@ -68,3 +91,4 @@ SinhSafe/
 ├── train_cv.py                 # Main 5-Fold Cross-Validation training script
 ├── training_output.log         # General training logs
 └── training_output_final_xlm.log # Logs for the final champion model run
+```
