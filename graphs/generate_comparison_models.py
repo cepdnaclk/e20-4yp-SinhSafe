@@ -7,8 +7,8 @@ import numpy as np
 models = ['SinBERT', 'XLM-RoBERTa', 'SinLLaMA (8B)']
 
 # Average F1-Scores (%)
-v1_f1_scores = [77.86, 80.41, 55.66]
-v2_f1_scores = [90.71, 86.86, 64.90]
+v1_f1_scores = [78.1, 80.5, 55.2]
+v2_f1_scores = [90.89, 87.21, 65.29]
 
 # Lowest Evaluation Loss
 v1_eval_loss = [0.5213, 0.5445, 0.4251]
@@ -27,7 +27,7 @@ rects1 = plt.bar(x - width/2, v1_f1_scores, width, label='V1 Dataset (6,075 docs
 rects2 = plt.bar(x + width/2, v2_f1_scores, width, label='V2 Dataset (16,545 docs)', color='#1A5F7A')
 
 # Formatting
-plt.ylabel('F1-Score (%)', fontsize=12, fontweight='bold')
+plt.ylabel('AVG-Precision (%)', fontsize=12, fontweight='bold')
 plt.title('Architectural Showdown: V1 vs. V2 Dataset Performance', fontsize=14, fontweight='bold', pad=20)
 plt.xticks(x, models, fontsize=12, fontweight='bold')
 plt.ylim(0, 110) # Set higher to fit labels

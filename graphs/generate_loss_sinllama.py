@@ -49,12 +49,12 @@ plt.annotate('Eval Loss flatlines.\nModel stops generalizing.',
              fontsize=11, fontweight='bold', color='#E74C3C')
 
 # The "Mic-Drop" Callout Box (Showing the Test Collapse)
-test_f1 = 64.9
+test_f1 = 65.3
 callout_text = (
     f"🚨 THE TESTING COLLAPSE\n"
     f"---------------------------------\n"
     f"Implied Validation Score: >90%\n"
-    f"Unseen Test F1-Score: {test_f1}%\n\n"
+    f"Unseen Test AVG-Precision Score: {test_f1}%\n\n"
     f"Conclusion: Severe Overfitting."
 )
 
