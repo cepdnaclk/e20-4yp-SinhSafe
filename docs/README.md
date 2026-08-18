@@ -16,7 +16,7 @@ title: SinhSafe - A Deep Learning Approach to Sinhala Harassment Detection
 
 #### Supervisors
 - Dr. Eng. Sampath Deegalla, [email](mailto:sampath@eng.pdn.ac.lk)
-- D. Herath
+- Dr. Eng. Damayanthi Herath, [email](mailto:damayanthiherath@eng.pdn.ac.lk)
 
 ---
 
