@@ -2,43 +2,45 @@
 layout: home
 permalink: index.html
 repository-name: e20-4yp-SinhSafe
-title: SinhSafe - Multi-Model Detection of Cyberbullying and Hate Speech
+title: SinhSafe - A Deep Learning Approach to Sinhala Harassment Detection
 ---
 
 <p align="center">
   <img src="images/SinhSafe.png" width="200" />
 </p>
 
-# SinhSafe: An Iterative Deep Learning & Ensemble Approach to Sinhala Harassment Detection
-
+# SinhSafe: A Deep Learning Approach to Sinhala Harassment Detection
 
 #### Team
 - E20397, Thilakasiri P.D., [email](mailto:e20397@eng.pdn.ac.lk)
 
 #### Supervisors
 - Dr. Eng. Sampath Deegalla, [email](mailto:sampath@eng.pdn.ac.lk)
+- D. Herath
 
 ---
 
 ## Project Summary
-SinhSafe is a high-precision content moderation framework designed for the linguistic complexities of Sinhala and code-mixed Singlish. Traditional moderation tools often fail on local languages due to the "Semantic Gap"—the difficulty in distinguishing between general vulgarity (Offensive) and targeted, malicious attacks (Harassment). 
+SinhSafe is a content moderation framework built for the linguistic complexities of Sinhala and code-mixed Singlish. Traditional moderation tools often fail on local languages due to the **semantic gap** — the difficulty in distinguishing general vulgarity (**Offensive**) and targeted, malicious content (**Harassment**) from ordinary colloquial speech (**Normal**).
 
-This project addresses these challenges through a dual-phase iterative approach. We established a rigorous ground truth of ~4,000 manually annotated documents using Inter-Annotator Agreement (IAA). Finding that traditional ML baselines were capped at a ~65% F1-score, we engineered an ensemble of deep learning architectures: **XLM-RoBERTa (Large)**, **SinBERT**, and **SinLLaMA**. By deploying these models in a **3-Model Ensemble Pseudo-Labeling Engine**, we tripled our dataset size to a perfectly balanced V2 corpus of 16,545 documents. Our final production system utilizes a soft-voting ensemble of the encoder models, achieving a peak F1-score of **90.7%** while maintaining real-time inference efficiency.
+For this submission, we built a **ternary classifier** — Normal / Offensive / Harassment — on **6,075** documents sourced from SOLD (Ranasinghe et al., 2022), validated using three independent annotators, inter-annotator agreement (IAA), and majority voting. Traditional ML baselines were capped at **~65% macro F1**, so we benchmarked three deep learning architectures — **XLM-RoBERTa Large**, **SinBERT**, and **SinLLaMA-8B** — and combined the two best-performing encoders (XLM-RoBERTa + SinBERT) in a **soft-voting ensemble**, reaching **76.21% macro F1** on the held-out test set — though, notably, not a *statistically significant* improvement over standalone XLM-RoBERTa (see Results).
+
+Beyond this submission's scope, we are extending the work with a 3-model ensemble pseudo-labeling engine to grow the dataset — see [Additional / Ongoing Work](#additional--ongoing-work-v2-pseudo-labeling-extension) below.
 
 ---
 
 ## Methodology & The Data Engine
 
 ### 1. The Data Pipeline
-The SinhSafe pipeline begins with raw social media ingestion followed by a hybrid preprocessing engine:
-* **Noise Removal:** Custom scripts to strip handles (e.g., @user) and social media artifacts.
-* **Transliteration:** Integration of high-accuracy Singlish-to-Sinhala conversion.
-* **Manual Annotation:** Establishing a baseline "Gold Standard" using strict rule sets for Harassment, Offensive, and Normal categories.
+* **Noise Removal:** Custom scripts to strip handles (e.g., `@user`) and social media artifacts.
+* **Transliteration:** Singlish → Sinhala conversion via the Google Translate API.
+* **Manual Annotation:** Three independent annotators labeled every document against a "Normal / Offensive / Harassment" rule set; inter-annotator agreement (IAA) was measured, and majority voting resolved disagreements.
+* **Split:** Stratified 90% train / 10% held-out test, random state fixed at 42 for reproducibility. Class distribution is imbalanced (~38% Normal, ~33% Offensive, ~28% Harassment as the minority class), so stratified sampling was preserved across every split and cross-validation fold.
 
 ### 2. Baseline Comparison
-Before moving to Deep Learning, we evaluated our V1 dataset against traditional algorithms:
+Before moving to deep learning, we evaluated the dataset against traditional algorithms:
 * **Tested Models:** Naive Bayes, Linear SVM, Random Forest, Logistic Regression, and MLP.
-* **The "F1 Ceiling":** All traditional models failed to exceed a 65% F1-Score, proving that semantic nuance in code-mixed text requires transformer-based architectures.
+* **The "F1 Ceiling":** All traditional models failed to exceed **~65% macro F1**, showing that semantic nuance in code-mixed text requires transformer-based architectures.
 
 <p align="center">
   <img src="images/basemodels.png"/>
@@ -49,44 +51,31 @@ Before moving to Deep Learning, we evaluated our V1 dataset against traditional 
 ## Experiment Setup and Implementation
 
 ### 1. Model Architectures
-We engineered three distinct architectures, adding custom layers to prevent overfitting:
+Three architectures were engineered, each with custom layers to manage overfitting:
 
-* **XLM-RoBERTa (Large):** Features a custom dense head with **20% Dropout** and **GELU activation** to manage the 1024-dimensional feature vector.
-* **SinBERT (LSTM-Head):** Utilizes a **Bi-Directional LSTM** (512 units) with **Dual-Pooling** (Average + Max) to capture long-range dependencies in native Sinhala script.
-* **SinLLaMA (8B):** An instruction-tuned LLM using **4-bit NF4 Quantization (QLoRA)** and **LoRA** adapters for parameter-efficient tuning.
+* **XLM-RoBERTa (Large, ~550M params):** Custom dense classification head with dropout and **GELU activation** over the pooled embedding.
+* **SinBERT (~110M params, LSTM head):** Bi-directional LSTM head to capture long-range dependencies in native Sinhala script.
+* **SinLLaMA-8B:** Instruction-tuned generative LLM using **4-bit NF4 quantization (QLoRA)** and LoRA adapters for parameter-efficient tuning, fine-tuned with Alpaca-style prompting.
+
+> Implementation-level details (exact dropout %, LSTM unit count, pooling strategy) reflect the actual training code — confirm these against your scripts if they've changed since this was written; they aren't reported in the symposium slides and so weren't independently cross-checked here.
 
 ### 2. Training Strategies, Hyperparameter Search & Loss Analysis
-To find the perfect training arguments (learning rate, batch size, weight decay) and prevent overfitting, we tested 12 distinct iterations across our three architectures. We tracked training vs. evaluation loss for every version and compared their overall metrics to select the "Best-Fit" model for our final ensemble.
+To find the best training arguments (learning rate, batch size, weight decay) and prevent overfitting, we tested 12 distinct iterations across the three architectures, tracking training vs. evaluation loss for every version to select the best-fit checkpoint for the final ensemble.
 
-#### A. SinBERT (LSTM-Head) - 5 Versions Tested
-We utilized **5-Fold Stratified Cross-Validation** to isolate the best-performing epoch and evaluate stability across different data splits.
+#### A. SinBERT — 5 Versions Tested
+Evaluated using stratified 5-fold cross-validation.
 
 <table>
   <tr>
-    <td align="center">
-      <strong>Version 1</strong><br>
-      <img src="images/sinbert/SinBERT_Version_1_Loss_Curve.png" alt="SinBERT V1">
-    </td>
-    <td align="center">
-      <strong>Version 2</strong><br>
-      <img src="images/sinbert/SinBERT_Version_2_Loss_Curve.png" alt="SinBERT V2">
-    </td>
+    <td align="center"><strong>Version 1</strong><br><img src="images/sinbert/SinBERT_Version_1_Loss_Curve.png" alt="SinBERT V1"></td>
+    <td align="center"><strong>Version 2</strong><br><img src="images/sinbert/SinBERT_Version_2_Loss_Curve.png" alt="SinBERT V2"></td>
   </tr>
   <tr>
-    <td align="center">
-      <strong>Version 3</strong><br>
-      <img src="images/sinbert/SinBERT_Version_3_Loss_Curve.png" alt="SinBERT V3">
-    </td>
-    <td align="center">
-      <strong>Version 4</strong><br>
-      <img src="images/sinbert/SinBERT_Version_4_Loss_Curve.png" alt="SinBERT V4">
-    </td>
+    <td align="center"><strong>Version 3</strong><br><img src="images/sinbert/SinBERT_Version_3_Loss_Curve.png" alt="SinBERT V3"></td>
+    <td align="center"><strong>Version 4</strong><br><img src="images/sinbert/SinBERT_Version_4_Loss_Curve.png" alt="SinBERT V4"></td>
   </tr>
   <tr>
-    <td colspan="2" align="center">
-      <strong>Version 5</strong><br>
-      <img src="images/sinbert/SinBERT_Version_5_Loss_Curve.png" alt="SinBERT V5" style="width: 50%;">
-    </td>
+    <td colspan="2" align="center"><strong>Version 5</strong><br><img src="images/sinbert/SinBERT_Version_5_Loss_Curve.png" alt="SinBERT V5" style="width: 50%;"></td>
   </tr>
 </table>
 
@@ -94,43 +83,29 @@ We utilized **5-Fold Stratified Cross-Validation** to isolate the best-performin
 <p align="center">
   <img src="images/sinbert/SinBERT_Metrics_Comparison.png" alt="SinBERT Metric Comparison" style="width: 80%;">
 </p>
-<br>
 
-<h3 style="margin-top: 20px;">Rationale for Selecting Version 4</h3>
+<h3 style="margin-top: 20px;">Rationale for Selecting Version 5</h3>
 
-Based on the comprehensive metric comparison and loss curve analysis, we selected **Version 4** as our optimal SinBERT model. While Versions 2 and 3 showed marginally higher raw accuracy, Version 4 demonstrated an exceptionally strong **Weighted Precision**, which is critical in moderation systems to minimize **"False Positives"** (unfairly penalizing normal users). 
+**Version 5** was selected as the optimal SinBERT configuration, reaching a validation macro F1 of **74.5%** — the highest of the five versions tested. Its loss curve showed evaluation loss hit its lowest point at **Epoch 3 (eval loss 0.547)**, just before the epoch-4 upturn (0.578) signaled the onset of overfitting. Halting training at this checkpoint captured the model at its peak generalization, ahead of the overfitting seen in later versions.
 
-Furthermore, the V4 Loss Curve presented a mathematically perfect early-stopping threshold: the evaluation loss hit a distinct, sharp minimum exactly at **Epoch 2**. By halting training at this exact checkpoint, we captured the model at its absolute peak generalization, completely avoiding the severe overfitting observed in the later epochs of the other versions.
-
-<br>
-
-**🏆 Winning Parameters for Production Model(SinBERT Best Version):**
+**🏆 Winning Parameters (SinBERT V5):**
 ```text
-max_len       : 128
-batch_size    : 16
-epochs        : 2
 learning_rate : 2e-05
-dropout_p     : 0.3
+batch_size    : 32
+weight_decay  : 0.01
 ```
-#### B. XLM-RoBERTa (Large) - 3 Versions Tested
-Similar to SinBERT, XLM-R was evaluated using Stratified 5-Fold Cross-Validation, relying on the lowest evaluation loss and highest weighted precision to prevent data leakage.
+*(epoch count, max sequence length, and dropout probability weren't part of the symposium's reported hyperparameter table — confirm these against your training logs before publishing.)*
+
+#### B. XLM-RoBERTa (Large) — 3 Versions Tested
+Evaluated using stratified 5-fold cross-validation.
 
 <table>
   <tr>
-    <td align="center">
-      <strong>Version 1</strong><br>
-      <img src="images/xlm/XLMR_Version_1_Loss_Curve.png" alt="XLM-R V1">
-    </td>
-    <td align="center">
-      <strong>Version 2</strong><br>
-      <img src="images/xlm/XLMR_Version_2_Loss_Curve.png" alt="XLM-R V2">
-    </td>
+    <td align="center"><strong>Version 1</strong><br><img src="images/xlm/XLMR_Version_1_Loss_Curve.png" alt="XLM-R V1"></td>
+    <td align="center"><strong>Version 2</strong><br><img src="images/xlm/XLMR_Version_2_Loss_Curve.png" alt="XLM-R V2"></td>
   </tr>
   <tr>
-    <td colspan="2" align="center">
-      <strong>Version 3</strong><br>
-      <img src="images/xlm/XLMR_Version_3_Loss_Curve.png" alt="XLM-R V3" style="width: 50%;">
-    </td>
+    <td colspan="2" align="center"><strong>Version 3</strong><br><img src="images/xlm/XLMR_Version_3_Loss_Curve.png" alt="XLM-R V3" style="width: 50%;"></td>
   </tr>
 </table>
 
@@ -139,47 +114,29 @@ Similar to SinBERT, XLM-R was evaluated using Stratified 5-Fold Cross-Validation
   <img src="images/xlm/XLMR_Metrics_Comparison.png" alt="XLM-R Metric Comparison" style="width: 80%;">
 </p>
 
-<br>
+<h3 style="margin-top: 20px;">Rationale for Selecting Version 1</h3>
 
-<h3 style="margin-top: 20px;">Rationale for Selecting Version 2</h3>
+**Version 1** was selected as the production-ready XLM-RoBERTa configuration, achieving the highest validation macro F1 (**76.9%**) of the three versions tested. Its evaluation loss reached its lowest point at **Epoch 4 (eval loss 0.554)**, just before the epoch-5 upturn (0.567) indicated overfitting — early stopping captured the model at this optimal checkpoint.
 
-Based on the multi-version benchmark, we selected **Version 2** as the production-ready model for the XLM-RoBERTa architecture. Version 2 achieved the highest **F1-Score (80.41%)** and **Accuracy (80.46%)** across all tested iterations. 
-
-While the loss curves indicate that Version 2 eventually began to overfit as training progressed, our implementation of **Early Stopping** allowed us to capture the model weights at the optimal convergence point (Epoch 3). This balanced peak performance with sufficient generalization to handle the linguistic variance in our large-scale unlabeled dataset.
-
-<br>
-
-**🏆 Winning Parameters for Production Model(XLM-R Best Version):**
+**🏆 Winning Parameters (XLM-R V1):**
 ```text
-num_train_epochs : 10
-batch_size       : 32
-learning_rate    : 2e-05
-warmup_steps     : 500
-weight_decay     : 0.01
+learning_rate : 1e-05
+batch_size    : 16
+weight_decay  : 0.05
 ```
-#### C. SinLLaMA (8B) - 4 Versions Tested
-For the Generative LLM, we evaluated via an 80/10/10 Train/Val/Test split. To prevent the "Testing Collapse" caused by memorization, we implemented strict **Early Stopping**: training halted if evaluation loss increased for 3 consecutive intervals (every 50 steps), capturing the checkpoint with the absolute lowest evaluation loss.
+*(epoch count and warmup steps weren't part of the symposium's reported hyperparameter table — confirm against your training logs.)*
+
+#### C. SinLLaMA-8B — 4 Versions Tested
+Evaluated via an 80/10 split within the training partition (full cross-validation wasn't practical at 8B parameters). Early stopping halted training if evaluation loss increased for 3 consecutive intervals (every 50 steps), capturing the checkpoint with the lowest evaluation loss.
 
 <table>
   <tr>
-    <td align="center">
-      <strong>Version 1</strong><br>
-      <img src="images/siinllama/SinLLaMA_Version_1_Loss_Curve.png" alt="SinLLaMA V1">
-    </td>
-    <td align="center">
-      <strong>Version 2</strong><br>
-      <img src="images/siinllama/SinLLaMA_Version_2_Loss_Curve.png" alt="SinLLaMA V2">
-    </td>
+    <td align="center"><strong>Version 1</strong><br><img src="images/siinllama/SinLLaMA_Version_1_Loss_Curve.png" alt="SinLLaMA V1"></td>
+    <td align="center"><strong>Version 2</strong><br><img src="images/siinllama/SinLLaMA_Version_2_Loss_Curve.png" alt="SinLLaMA V2"></td>
   </tr>
   <tr>
-    <td align="center">
-      <strong>Version 3</strong><br>
-      <img src="images/siinllama/SinLLaMA_Version_3_Loss_Curve.png" alt="SinLLaMA V3">
-    </td>
-    <td align="center">
-      <strong>Version 4</strong><br>
-      <img src="images/siinllama/SinLLaMA_Version_4_Loss_Curve.png" alt="SinLLaMA V4">
-    </td>
+    <td align="center"><strong>Version 3</strong><br><img src="images/siinllama/SinLLaMA_Version_3_Loss_Curve.png" alt="SinLLaMA V3"></td>
+    <td align="center"><strong>Version 4</strong><br><img src="images/siinllama/SinLLaMA_Version_4_Loss_Curve.png" alt="SinLLaMA V4"></td>
   </tr>
 </table>
 
@@ -188,16 +145,11 @@ For the Generative LLM, we evaluated via an 80/10/10 Train/Val/Test split. To pr
   <img src="images/siinllama/SinLLaMA_Metrics_Comparison.png" alt="SinLLaMA Metric Comparison" style="width: 80%;">
 </p>
 
-<br>
-
 <h3 style="margin-top: 20px;">Rationale for Selecting Version 3</h3>
 
-For the SinLLaMA architecture, **Version 3** was selected as the optimal configuration. This version achieved the highest overall performance metrics, specifically reaching a peak **F1-Score of 65.66%**. 
+**Version 3** was selected as the optimal SinLLaMA configuration, reaching a validation macro F1 of **57.2%**. Despite the 8B-parameter model's high tendency to overfit — visible in the diverging loss curves of the other versions — Version 3's evaluation loss plateaued around **0.43 near step 400** while training loss kept falling: the clearest signature of the memorization trap. This checkpoint was retained as the best-available generative configuration, though on the final held-out test set it still only reached **55.7% macro F1**, well behind both encoder models.
 
-While the 8B parameter model exhibited a high tendency to overfit (as seen in the diverging loss curves of other versions), Version 3 maintained a more stable evaluation loss across training steps. By leveraging the specific hyperparameters of this iteration, we were able to maximize the generative potential of the model for our pseudo-labeling engine while mitigating the "Memorization Trap" common in large-scale instruction tuning.
-<br>
-
-**🏆 Winning Parameters for Production Model(SinLLaMA Best Version):**
+**🏆 Winning Parameters (SinLLaMA V3):**
 ```text
 max_length        : 512
 batch_size        : 16
@@ -207,75 +159,86 @@ weight_decay      : 0.05
 bf16              : True
 ```
 
-
-### 3. Synthesizing V1 Production Models
-After identifying the optimal hyperparameters and the exact "best-fit" epoch for each architecture, we moved out of the cross-validation phase. We retrained **XLM-RoBERTa**, **SinBERT**, and **SinLLaMA** on **100% of the V1 Dataset (6,075 documents)** using these winning parameters. This maximized the models' knowledge retention, resulting in three highly robust, inference-ready "V1 Production Models."
-
----
-
-## The Ensemble Pseudo-Labeling Engine (V1 to V2)
-
-To overcome data scarcity, we deployed these three V1 Production Models on 145,000 unlabelled social media comments. We applied a **Strict Extraction Logic** to build our final V2 Dataset:
-1. **Direct Extraction:** Any label where at least one model had **>90% confidence**.
-2. **Consensus Extraction:** Confidence between **80-90%** where XLM-R and SinBERT agreed.
-3. **Manual Review:** Confidence between **40-80%** where all three models agreed; these were manually verified before inclusion.
-
-This process allowed us to extend the Harassment class to 5,515 documents, creating a perfectly balanced V2 dataset (16,545 documents total) for final production training.
+### 3. Synthesizing Production Models
+After identifying the optimal hyperparameters and best-fit checkpoint for each architecture, we exited the cross-validation phase and retrained **XLM-RoBERTa**, **SinBERT**, and **SinLLaMA** on **100% of the 90% training partition** (holding out the same 10% test set used for every model throughout), using each architecture's winning parameters. This produced three inference-ready production models.
 
 ---
 
 ## Results and Analysis
 
-The transition to the V2 dataset resulted in a massive performance leap across all architectures.
+Final scores are **macro F1** on the 10% held-out test set (best configs, trained on 100% of the 90% training partition):
 
-| Model | Parameter Size | V1 F1-Score | V2 F1-Score |
-| :--- | :--- | :--- | :--- |
-| **SinBERT** | ~110 Million | 77.9% | **90.7%** |
-| **XLM-R** | ~550 Million | 80.4% | **86.9%** |
-| **SinLLaMA** | ~8 Billion | 55.7% | **64.9%** |
+| Model | Parameters | Validation Macro F1 (best version) | Test Macro F1 | 95% CI (bootstrap, 1,000 iterations) |
+| :--- | :--- | :--- | :--- | :--- |
+| SinBERT Large | ~110M | 74.5% (V5) | 73.44% | [69.83%, 77.02%] |
+| XLM-RoBERTa Large | ~550M | 76.9% (V1) | 75.44% | [71.95%, 78.89%] |
+| SinLLaMA-8B | ~8B | 57.2% (V3) | 55.7% | — |
+| **SinhSafe Ensemble (soft-voting)** | — | — | **76.21%** | [72.96%, 79.66%] |
+
+**Is the ensemble actually better?** The ensemble's advantage over standalone XLM-RoBERTa is only **+0.89 points** (95% CI: [-1.61%, 3.36%]) — the interval crosses zero, so this is **not statistically significant**. A well-tuned standalone XLM-RoBERTa performs comparably to the costlier ensemble.
 
 <table>
   <tr>
-    <td align="center">
-      <strong>V1 to V2 Performance Leap</strong><br>
-      <img src="images/final_f1_leap.png" alt="F1 Score Leap">
-    </td>
-    <td align="center">
-      <strong>Production Models: Final Eval Loss</strong><br>
-      <img src="images/final_eval_loss.png" alt="Final Evaluation Loss">
-    </td>
+    <td align="center"><strong>Production Models: Final Eval Loss</strong><br><img src="images/final_eval_loss.png" alt="Final Evaluation Loss"></td>
   </tr>
 </table>
 
 ### Optimal Epoch & Loss Curves
-By tracking training and evaluation loss, we successfully identified the best epoch to run our 100% data training without overfitting or underfitting.
+By tracking training and evaluation loss, we identified the best epoch to run each model's final training pass without overfitting or underfitting.
 
 <table>
   <tr>
-    <td align="center">
-      <strong>SinBERT Production Model</strong><br>
-      <img src="images/SinBERT_Best_Version_Loss_Curve.png" alt="SinBERT Best Production Curve">
-    </td>
-    <td align="center">
-      <strong>XLM-RoBERTa Production Model</strong><br>
-      <img src="images/XLM_Best_Version_Loss_Curve.png" alt="XLM-R Best Production Curve">
-    </td>
+    <td align="center"><strong>SinBERT Production Model</strong><br><img src="images/SinBERT_Best_Version_Loss_Curve.png" alt="SinBERT Best Production Curve"></td>
+    <td align="center"><strong>XLM-RoBERTa Production Model</strong><br><img src="images/XLM_Best_Version_Loss_Curve.png" alt="XLM-R Best Production Curve"></td>
   </tr>
 </table>
 
-### The "LLM Memorization Trap"
-A critical discovery was the failure of SinLLaMA to generalize. Despite its 8B parameters, it exhibited **Severe Overfitting**, crashing to 64.9% on unseen test data, whereas the lightweight Encoders (SinBERT/XLM-R) learned general linguistic rules more effectively. 
+### The "Memorization Trap"
+A critical finding was SinLLaMA's failure to generalize. Despite 8B parameters and high training accuracy, it collapsed to **55.7% macro F1** on the held-out test set, while the lightweight encoders (SinBERT/XLM-R) learned more generalizable linguistic patterns. As training loss kept falling, evaluation loss plateaued and diverged — the classic signature of memorization rather than generalization. This is why checkpoints were selected by validation performance, not training loss.
 
 <p align="center">
   <img src="images/sinllama_memorization_trap.png" alt="SinLLaMA Memorization Trap Graph" style="width: 80%;">
   <br>
-  <em>Figure: Visualizing the divergence between training and evaluation loss, indicating a collapse in generalization.</em>
+  <em>Figure: Divergence between training and evaluation loss, indicating a collapse in generalization.</em>
 </p>
 
 ---
 
 ## Conclusion
-The final **SinhSafe Production Ensemble** utilizes **Soft-Voting (Probability Averaging)** between XLM-RoBERTa and SinBERT. This configuration provides a culturally aware, real-time moderation solution that outperforms traditional baselines while avoiding the massive computational overhead of generative LLMs.
+The final **SinhSafe Production Ensemble** uses **soft-voting (probability averaging)** between XLM-RoBERTa and SinBERT, reaching 76.21% macro F1. Statistically, this is **not significantly better** than standalone XLM-RoBERTa alone (75.44%, overlapping 95% CIs) — so for latency-sensitive deployments, a single well-tuned XLM-RoBERTa may be the more practical choice. Both clearly outperform traditional ML baselines and the generative SinLLaMA-8B model, while avoiding the compute overhead of large generative LLMs.
+
+We recommend deploying standalone XLM-RoBERTa in a **human-in-the-loop pipeline**: it scores incoming content, low-confidence predictions are routed to human moderators rather than auto-actioned, and reviewed cases feed back into periodic retraining — improving accuracy and fairness over time.
+
+---
+
+## Additional / Ongoing Work: V2 Pseudo-Labeling Extension
+*(Beyond the scope of this submission — included here as ongoing follow-up work, not part of the presented/evaluated results above.)*
+
+To address data scarcity beyond the initial 6,075-document dataset, we deployed the three V1 production models (XLM-RoBERTa, SinBERT, SinLLaMA) on **145,000 unlabelled social media comments** and applied a strict extraction logic to build a larger V2 dataset:
+
+1. **Direct Extraction:** Any label where at least one model had **>90% confidence**.
+2. **Consensus Extraction:** Confidence between **80–90%** where XLM-R and SinBERT agreed.
+3. **Manual Review:** Confidence between **40–80%** where all three models agreed; manually verified before inclusion.
+
+This extended the Harassment class to 5,515 documents, producing a perfectly balanced **V2 corpus of 16,545 documents**.
+
+| Model | Parameters | V1 Test Macro F1 | V2 F1-Score |
+| :--- | :--- | :--- | :--- |
+| SinBERT | ~110M | 73.44% | **90.7%** |
+| XLM-R | ~550M | 75.44% | **86.9%** |
+| SinLLaMA | ~8B | 55.7% | **64.9%** |
+
+> **Note:** the V2 column's metric type and test set haven't been independently verified against the same macro-F1 / bootstrap-CI methodology used for the V1 results above — confirm whether V2 figures use macro F1 or a different metric (e.g. weighted F1/accuracy) before citing them alongside the V1 numbers, since they aren't directly comparable otherwise.
+
+<table>
+  <tr>
+    <td align="center"><strong>V1 to V2 Performance Leap</strong><br><img src="images/final_f1_leap.png" alt="F1 Score Leap"></td>
+  </tr>
+</table>
+
+This V2 work is presented as a promising extension for future publication, separate from the ternary classifier evaluated at the symposium.
+
+---
 
 ## Project Demo
 <p align="center">
