@@ -68,14 +68,15 @@ Not an automatic censor — a decision-support pipeline:
 3. Human-reviewed and high-confidence cases are fed back into the dataset.
 4. The model is periodically retrained, improving accuracy and fairness over time.
 
-## Dataset Annotation Acknowledgements
+**Dataset Annotation Acknowledgements**
+
 The development of the SinhSafe benchmark relied on the creation of two distinct datasets, specifically annotated to capture both male and female points of view (POV) regarding online harassment and cyberbullying. Sincere gratitude is extended to the following individuals for their dedicated efforts in manually classifying the code-mixed Sinhala-English corpus:
 
-Female POV Dataset Annotators
-Uduvita Arachchilage Dineeshi Thilakshika Dassanayaka – Faculty of Applied Sciences, Sabaragamuwa University of Sri Lanka
-Prabodhani Buddhimali Ranawaka – Faculty of Medicine, Wayamba University of Sri Lanka
+**Female POV Dataset Annotators**
+* **Uduvita Arachchilage Dineeshi Thilakshika Dassanayaka** – Faculty of Applied Sciences, Sabaragamuwa University of Sri Lanka
+* **Prabodhani Buddhimali Ranawaka** – Faculty of Medicine, Wayamba University of Sri Lanka
 
-Male POV Dataset Annotators
-Priyankarage Dimantha Thilakasiri – University of Peradeniya
-G.D.D. Kumaranathunga – University of Peradeniya
-R. Priyadarshana – University of Peradeniya
+**Male POV Dataset Annotators**
+* **Priyankarage Dimantha Thilakasiri** – University of Peradeniya
+* **G.D.D. Kumaranathunga** – University of Peradeniya
+* **R. Priyadarshana** – University of Peradeniya
