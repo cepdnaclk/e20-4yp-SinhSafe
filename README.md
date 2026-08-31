@@ -68,27 +68,14 @@ Not an automatic censor — a decision-support pipeline:
 3. Human-reviewed and high-confidence cases are fed back into the dataset.
 4. The model is periodically retrained, improving accuracy and fairness over time.
 
-## 📂 Repository Structure
+## Dataset Annotation Acknowledgements
+The development of the SinhSafe benchmark relied on the creation of two distinct datasets, specifically annotated to capture both male and female points of view (POV) regarding online harassment and cyberbullying. Sincere gratitude is extended to the following individuals for their dedicated efforts in manually classifying the code-mixed Sinhala-English corpus:
 
-```text
-SinhSafe/
-├── data/                       # Dataset directory
-├── debug_results/              # Logs for debugging runs
-├── models/                     # Saved model checkpoints
-├── notebooks/                  # Jupyter notebooks for experiments
-├── results/                    # Output from training folds
-├── src/                        # Source code directory
-├── venv/                       # Virtual environment
-├── .gitignore                  # Git ignore file
-├── calculate_f1.py             # Script to calculate macro F1 scores
-├── check_gpu.py                # Utility to verify GPU availability
-├── data_process_output.log     # Logs from data preprocessing steps
-├── debug_train.py              # Lightweight training script for debugging
-├── f1_scores.log               # Log file specifically for F1 metrics
-├── process_data.py             # Main script for data cleaning & consolidation
-├── requirements.txt            # Project dependencies (PyTorch, Transformers)
-├── test_model.py               # Script for inference on new text
-├── train_cv.py                 # Main 5-Fold Cross-Validation training script
-├── training_output.log         # General training logs
-└── training_output_final_xlm.log # Logs for the final champion model run
-```
+Female POV Dataset Annotators
+Uduvita Arachchilage Dineeshi Thilakshika Dassanayaka – Faculty of Applied Sciences, Sabaragamuwa University of Sri Lanka
+Prabodhani Buddhimali Ranawaka – Faculty of Medicine, Wayamba University of Sri Lanka
+
+Male POV Dataset Annotators
+Priyankarage Dimantha Thilakasiri – University of Peradeniya
+G.D.D. Kumaranathunga – University of Peradeniya
+R. Priyadarshana – University of Peradeniya
